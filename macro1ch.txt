@@ -1,0 +1,1044 @@
+// Ce code source est régi par la licence CeCILL V2.1 soumise au droit français et 
+//respectant les principes de diffusion des logiciels libres. Il est autorisé de modifier 
+//et/ou redistribuer ce code sous les conditions de la licence CeCILL V2.1. Le texte complet
+// de la licence CeCILL V2.1 est dans le fichier `LICENSE`.
+
+// ***********************************************************************************
+// ***** Construction de séries nécessaires au cadre comptable TES-TEE simplifié *****
+// ***** TES : tableau des entrées-sorties / TEE : tableau économique d'ensemble *****
+// ***** voir https://www.insee.fr/fr/statistiques/2383687?sommaire=2383694 **********
+// ***********************************************************************************
+
+// Cette macro agrège le TES, et reconstruit les variables 
+// nécessaires du TEE
+
+// Input : comptes trimestriels chaînés (fichier public10.frm)
+// Ouput : fichier don1ch.frm
+
+// A noter : certains agrégats ne sont pas publiés tels quels par les comptes trims.
+// Il faut donc recalculer un certain nombre d'agrégats, comme par exemple le p3g ci dessous
+// mais aussi calculer des agrégats qui seront utiles dans macro2
+// Il est important de noter qu'un certain nombre de ces agrégats doivent
+// être calculés alors même qu'ils seront recalculés dans macro2.
+// Il s'agit plus particulièrement des endogènes de macro2 qui ne sont pas issues
+// des comptes trim.
+// Enfin, les comptes trim ne calculent pas les prix
+
+// Chargement des comptes trimestriels : on copie la base des comptes trim dans la base de travail
+
+DELACCESS all; DELSAVE all; DRANGE;
+
+ACCESS ct  type formdata id inputs/public10B.frm mode r ; SEARCH ct ;
+
+ACCESS cad type formdata id don1ch.frm mode c; SEARCH cad ;
+DO DFDELETE("cad",">");
+DO DFCOPY'F ("ct","cad");
+DELSEARCH ct ; DELACCESS ct ;
+
+
+
+// Importations des fonctions du dossier /outils
+ACCESS outils id  outils;  SEARCH outils;
+
+
+
+
+// ****************************************************************************
+// *****  Construction des séries utiles à partir des séries existantes : *****
+// *****             prix A-1, prix chaîné, volume au prix A-1            *****
+// ****************************************************************************
+
+/* RAPPEL Nomenclature es comptes trimestriels
+	DB - TOTAL Biens
+	AZ - Agriculture, sylviculture et peche
+	DI - Industrie TOTAL
+	DIM - industries manufacturieres
+	DE - Industries extractives
+	FZ - Construction
+	GZ - Commerce, réparation d'automobiles et de motocycles
+	HZ - Transports et entreposages
+	IZ - Hebergement et restauration
+	JZ - Information et communication
+	KZ - Activités financières et d'assurancex
+	LZ - Activités immobilières
+	MN - Activités scientifiques et techniques, services administratifs et de soutien
+	OQ - Administration publique, enseignement, santé humaine et action sociale
+	RU - Autres activités de service
+	PCHTR - Correction territorial
+*/
+
+
+DO liste = C.(
+// APPROCHE PRODUIT - RESSOURCES
+			"td_pib",
+			"td_p1_d",		"td_p7_d",  									"TD_D211_d",	"TD_D212_d",	"TD_D214_d",	"TD_D319_d",	/*"td_p74_d",*/  "TD_P73_PCAFAB", "td_p7_PCAFAB",
+	/* Biens */         	                                                                                                                           
+	      	"td_p1_db",		"td_p7_db",  	"td_temp_db",	"td_memp_db",	"TD_D211_db",	"TD_D212_db",	"TD_D214_db",	"TD_D319_db",	//"td_p74_db",  
+	      	"td_p1_az",		"td_p7_az", 	"td_temp_az",	"td_memp_az",	"TD_D211_AZ",	"TD_D212_AZ",	"TD_D214_AZ",	//"TD_D319_AZ",	//"td_p74_az", 
+			"td_p1_di",		"td_p7_di",		"td_temp_di",	"td_memp_di",	"TD_D211_di",	"TD_D212_di",	"TD_D214_di",	"TD_D319_di",	//"td_p74_di",	
+			"td_p1_de",		"td_p7_de",		"td_temp_de",	"td_memp_de",	"TD_D211_de",					"TD_D214_de",	//"TD_D319_de",	//"td_p74_de",	
+	      	"td_p1_dim",	"td_p7_dim",	"td_temp_dim",	"td_memp_dim",	"td_d211_dim",	"td_d212_dim",	"td_d214_dim",	"td_d319_dim",	//"td_p74_dim",
+			"td_p1_c1",		"td_p7_c1", 	"td_temp_c1",	"td_memp_c1",	"td_d211_c1", 	"td_d212_c1", 	"td_d214_c1", 	//"td_d319_c1",	//"td_p74_c1", 
+			"td_p1_c2",		"td_p7_c2",		"td_temp_c2",	"td_memp_c2",	"td_d211_c2", 	"td_d212_c2", 	"td_d214_c2", 	//				//"td_p74_c2",	
+			"td_p1_c3",		"td_p7_c3",		"td_temp_c3",	"td_memp_c3",	"td_d211_c3", 	"td_d212_c3", 	"td_d214_c3", 	//				//"td_p74_c3",	
+			"td_p1_c4",		"td_p7_c4",		"td_temp_c4",	"td_memp_c4",	"td_d211_c4", 	"td_d212_c4", 	"td_d214_c4", 	//"td_d319_c4",	//"td_p74_c4",	
+			"td_p1_c5",		"td_p7_c5", 	"td_temp_c5",	"td_memp_c5",	"td_d211_c5", 	"td_d212_c5", 	"td_d214_c5", 	//"td_d319_c5",	//"td_p74_c5", 
+	/* Construction */                                                                                                      //
+			"td_p1_ds",		"td_p7_ds",		"td_temp_ds",	"td_memp_ds",	"td_d211_ds", 	 				"td_d214_ds", 	//"td_d319_ds", //"td_d212_ds",
+			"td_p1_fz",														"td_d211_fz", 					"td_d214_fz",   //"td_d319_fz", //Montants inférieurs à 10M€
+	/* Services marchands*/
+
+			"td_p1_dsm",	"td_p7_dsm",	"td_temp_dsm",	"td_memp_dsm",	"td_d211_dsm",					"td_d214_dsm",   // "td_d319_dsm",	//"td_p74_dsm",	"td_p73_dsm",  	 // td_d212_dsm négligeable
+			"td_p1_gz",	    "td_p7_gz",						"td_memp_gz",	"TD_D211_gz",									//				//"td_p74_gz",
+			"td_p1_hz",	   	"td_p7_hz",		"td_temp_hz",					"TD_D211_hz",					"TD_D214_hz",	 // "TD_D319_hz", 	//"td_p74_hz",	"TD_P73_FHZA", 
+			"td_p1_iz",	                									"TD_D211_iz",					"TD_D214_iz", 	 // "TD_D319_iz",   //"td_p74_jz",                 
+			"td_p1_jz",	    "td_p7_jz",		"td_temp_jz",	"td_memp_jz",	"td_d211_jz",					"td_d214_jz",	 //               //
+			"td_p1_kz",	    "td_p7_kz",										"td_d211_kz", 					"td_d214_kz", 	 // "td_d319_kz", 	//"td_p74_kz", "TD_P73_FKZA",         
+			"td_p1_lz",	                   									"td_d211_lz", 					"td_d214_lz", 	 // 		//		
+			"td_p1_mn",	    "td_p7_mn",										"td_d211_mn", 					"td_d214_mn", 	 // 		//"td_p74_mn",	// "td_d319_mn",
+			"td_p1_ru",	    "td_p7_ru",										"td_d211_ru", 					"td_d214_ru", 	 // "td_d319_ru",   //"td_p74_ru",
+	/* Services non marchands*/                                                                                                             //
+			"td_p1_dsn",	"td_p7_dsn",									"td_d211_dsn", 													//"td_p74_dsn", // "td_d319_dsn"          négligeable
+			"td_p1_oq",	    "td_p7_oq",										"td_d211_oq", 													//"td_p74_oq",	 // "td_d319_oq"          négligeable
+	
+// APPROCHE PRODUIT - EMPLOIS 
+	      	"td_p2_d",		"td_p31g_d",	"td_p32g_d",	"td_p3m_d",	"td_p3p_d",			"td_p51_d",		"td_p51s_d",	"td_p51b_d",	"td_p51g_d",	"td_p51m_d", 	"td_p51p_d",   	"td_p6_d", 	
+	/* Biens */                                                                         	
+	      	"td_p2_db",		"td_p31g_db",					"td_p3m_db",					"td_p51_db",	"td_p51s_db",	"td_p51b_db",	"td_p51g_db",					"td_p51p_db",   "td_p6_db", 
+	      	"td_p2_az",										"td_p3m_az",					"td_p51_az",	"TD_P51S_AZ",																	"td_p6_az",	
+			"td_p2_di",										"td_p3m_di",					"td_p51_di",	"TD_P51S_di",	"TD_P51b_di",	"TD_P51g_di",					"td_p51p_di",	"td_p6_di",		
+			"td_p2_de",										"td_p3m_de",																													"td_p6_de",		
+	      	"td_p2_dim",	"td_p31g_dim",					"td_p3m_dim",					"td_p51_dim",	"TD_P51S_dim",	"TD_P51b_dim",	"TD_P51g_dim",					"td_p51p_dim",	"td_p6_dim",	
+			"td_p2_c1",		"td_p31g_c1",					"td_p3m_c1",																													"td_p6_c1", 	
+			"td_p2_c2",										"td_p3m_c2",																													"td_p6_c2", 	
+			"td_p2_c3",		"td_p31g_c3",					"td_p3m_c3",					"td_p51_c3",	"TD_P51S_c3",	"TD_P51b_c3",	"TD_P51g_c3",					"td_p51p_c3",	"td_p6_c3", 	
+			"td_p2_c4",		"td_p31g_c4",					"td_p3m_c4",					"td_p51_c4",	"TD_P51S_c4",	"TD_P51b_c4",	"TD_P51g_c4",					"td_p51p_c4",	"td_p6_c4", 	
+			"td_p2_c5",		"td_p31g_c5",					"td_p3m_c5",					"td_p51_c5",	"TD_P51S_c5",	"TD_P51b_c5",	"TD_P51g_c4",					"td_p51p_c5",	"td_p6_c5", 
+	/* Construction */                                                                  	
+			"td_p2_fz",										"td_p3m_fz",					"td_p51_fz",	"td_p51s_fz", 	"TD_P51b_fz",	"TD_P51g_fz",	"TD_P51m_fz",	"td_p51p_fz",	
+	/* Services marchands*/
+			"td_p2_ds",		"td_p31g_ds",	"td_p32g_ds",	"td_p3m_ds",	"td_p3p_ds",	"td_p51_ds",	"td_p51s_ds", 	"TD_P51b_ds",	"TD_P51g_ds",	"TD_P51m_ds",	"td_p51p_ds",	"td_p6_ds",	
+			"td_p2_dsm",	"td_p31g_dsm",	"td_p32g_dsm",	"td_p3m_dsm",	"td_p3p_dsm",	"td_p51_dsm",	"td_p51s_dsm", 	"TD_P51b_dsm",	"TD_P51g_dsm",	"TD_P51m_dsm",	"td_p51p_dsm",	"td_p6_dsm",	
+			"td_p2_gz",										"td_p3m_gz",																										"td_p6_gz",		
+			"td_p2_hz",		"td_p31g_hz",					"td_p3m_hz",	                        																			"td_p6_hz",	//"TD_P73_FHZA",
+			"td_p2_iz",		"td_p31g_iz",					"td_p3m_iz",																														
+			"td_p2_jz",		"td_p31g_jz",					"td_p3m_jz",					"td_p51_jz",																		"td_p6_jz",		
+			"td_p2_kz",										"td_p3m_kz",																										"td_p6_kz",	//"TD_P73_FKZA",
+			"td_p2_lz",		"td_p31g_lz",					"td_p3m_lz",					"td_p51_lz",																						
+			"td_p2_mn",		"td_p31g_mn",	"td_p32g_mn",	"td_p3m_mn",					"td_p51_mn",																		"td_p6_mn",
+			"td_p2_ru",		"td_p31g_ru",	"td_p32g_ru",	"td_p3m_ru",	"td_p3p_ru",	"td_p51_ru",																		"td_p6_ru",
+	/* Services non marchands*/
+			"td_p2_dsn",	"td_p31g_dsn",	"td_p32g_dsn",	"td_p3m_dsn",	"td_p3p_dsn",																						"td_p6_dsn",	
+			"td_p2_oq",		"td_p31g_oq",	"td_p32g_oq",	"td_p3m_oq",	"td_p3p_oq",																						"td_p6_oq",
+
+	/* Autres corrections */                                                                                                                                                        	
+			"td_p3m_pchtr", "td_p6_pchtr",	"td_p7_pchtr", //"td_p74_pchtr",
+			
+// APPROCHE BRANCHE
+			"td_p1e_d",		"td_p2e_d",		"td_b1_d", 		/*"tc_b1_d",*/
+			"td_p1e_smna",	"td_p2e_smna",	"td_b1_smna",	/*"tc_b1_smna", */ 
+	/* Biens */                                                   
+			"td_p1e_az",	"td_p2e_az",	"td_b1_az",		//"tc_b1_az",	
+			"td_p1e_de",	"td_p2e_de",	"td_b1_de",		//"tc_b1_de", 
+			"td_p1e_di",	"td_p2e_di",	"td_b1_di",		//"tc_b1_di", 
+			"td_p1e_dim",	"td_p2e_dim",	"td_b1_dim",	//"tc_b1_dim",
+			"td_p1e_c1",	"td_p2e_c1",	"td_b1_c1",		//"tc_b1_c1", 
+			"td_p1e_c2",	"td_p2e_c2",	"td_b1_c2",		//"tc_b1_c2", 
+			"td_p1e_c3",	"td_p2e_c3",	"td_b1_c3",		//"tc_b1_c3", 
+			"td_p1e_c4",	"td_p2e_c4",	"td_b1_c4",		//"tc_b1_c4", 
+			"td_p1e_c5",	"td_p2e_c5",	"td_b1_c5",		//"tc_b1_c5", 
+	/* Construction */                               		//           
+			"td_p1e_fz",	"td_p2e_fz",	"td_b1_fz",		//"tc_b1_fz", 
+	/* Services */                                   		//         
+			"td_p1e_dsm",	"td_p2e_dsm",	"td_b1_dsm",	//"tc_b1_dsm",
+			"td_p1e_gz",	"td_p2e_gz",	"td_b1_gz",		//"tc_b1_gz", 
+			"td_p1e_hz",	"td_p2e_hz",	"td_b1_hz",		//"tc_b1_hz", 
+			"td_p1e_iz",	"td_p2e_iz",	"td_b1_iz",		//"tc_b1_iz", 
+			"td_p1e_jz",	"td_p2e_jz",	"td_b1_jz",		//"tc_b1_jz", 
+			"td_p1e_kz",	"td_p2e_kz",	"td_b1_kz",		//"tc_b1_kz", 
+			"td_p1e_lz",	"td_p2e_lz",	"td_b1_lz",		//"tc_b1_lz", 
+			"td_p1e_mn",	"td_p2e_mn",	"td_b1_mn",		//"tc_b1_mn", 
+			"td_p1e_ru",	"td_p2e_ru",	"td_b1_ru",		//"tc_b1_ru", 
+			"td_p1e_dsn",	"td_p2e_dsn",	"td_b1_dsn",	//"tc_b1_dsn",
+			"td_p1e_oq",	"td_p2e_oq",	"td_b1_oq"		//"tc_b1_oq",
+			
+			/*"tc_p31g_d", "tc_p32g_d",*/
+			//"tc_p51g_d", /*"tc_p51s_d", "tc_p51s_fz",*/
+			/*"tc_p6_dim", "tc_p6_c2",*/
+			//"tc_p7_dim", "tc_p7_c2"
+);
+			
+DO liste0    = liste||"0"; // liste prix A-1
+DO liste5_ch = liste||"5_ch"; // liste prix chaînés
+DO liste7    = liste||"7"; // liste volume au prix A-1
+DO liste7_ch = liste||"7_ch"; // liste volume chaîné
+DO liste3    = liste||"3"; // liste valeur
+
+&execmd "do cad_@(liste0)   = pxbasevolch'f(cad_@(liste7_ch),cad_@(liste3))" ";" ; // prix A-1 à partir vol. chaîné et valeur
+&execmd "do cad_@(liste5_ch)= 100*cad_@(liste3)/cad_@(liste7_ch)" ";"; // prix chaîné
+&execmd "do cad_@(liste7)   = cad_@(liste0)*cad_@(liste7_ch)" ";" ;   // passage vol. chaîné --> vol. prix A-1
+
+// Le d319_c4 nul avant 1986 dans les fichiers des comptes trim
+// On le recalcule ci-dessous
+
+// Recalcul des composantes du passage PIB-VA (d231)
+
+DO cad_td_d231_db7 = cad_td_D211_db7 + cad_td_D212_db7 + cad_td_D214_db7 +td_D319_db7 ;
+DO cad_td_d231_db3 = cad_td_D211_db3 + cad_td_D212_db3 + cad_td_D214_db3 +td_D319_db3 ;
+
+
+DO cad_td_d231_di7 = cad_td_D211_di7 + cad_td_D212_di7 + cad_td_D214_di7 +td_D319_di7 ;
+DO cad_td_d231_di3 = cad_td_D211_di3 + cad_td_D212_di3 + cad_td_D214_di3 +td_D319_di3 ;
+
+DO cad_td_d231_dim7 = cad_td_D211_dim7 + cad_td_D212_dim7 + cad_td_D214_dim7 +td_D319_dim7 ;
+DO cad_td_d231_dim3 = cad_td_D211_dim3 + cad_td_D212_dim3 + cad_td_D214_dim3 +td_D319_dim3 ;
+
+
+// *************************************************************
+// ***** Construction de séries intermédiaires pour le TES *****
+// *****    Décomposition  M + PIB = C + I + DEL(S) + X    *****
+// *************************************************************
+
+// On construit ici toutes les variables qui sont utiles au modèle et qui interviennent dans cette équation comptable.
+
+// ***********************************************
+// CONSOMMATION FINALE
+// ***********************************************
+
+// CONSO DES MENAGES
+DO cad_td_p3m_dimhc23 = cad_td_p3m_dim3 - cad_td_p3m_c23 ;
+DO cad_td_p3m_dimhc27 = cad_td_p3m_dim7 - cad_td_p3m_c27 ;
+
+// CONSO PUBLIQUE
+DO cad_td_p3g_d3 = cad_td_p31g_d3 + cad_td_p32g_d3 ;
+DO cad_td_p3g_d7 = cad_td_p31g_d7 + cad_td_p32g_d7 ;
+
+DO cad_td_p3g_db3 = cad_td_p31g_db3  ;
+DO cad_td_p3g_db7 = cad_td_p31g_db7  ;
+
+DO cad_td_p3g_dim3 = cad_td_p31g_dim3  ;
+DO cad_td_p3g_dim7 = cad_td_p31g_dim7  ;
+
+DO cad_td_p3g_c13 = cad_td_p31g_c13  ;
+DO cad_td_p3g_c17 = cad_td_p31g_c17  ;
+
+DO cad_td_p3g_c33 = cad_td_p31g_c33  ;
+DO cad_td_p3g_c37 = cad_td_p31g_c37  ;
+
+DO cad_td_p3g_c43 = cad_td_p31g_c43  ;
+DO cad_td_p3g_c47 = cad_td_p31g_c47  ;
+
+DO cad_td_p3g_c53 = cad_td_p31g_c53  ;
+DO cad_td_p3g_c57 = cad_td_p31g_c57  ;
+
+DO cad_td_p3g_dimhc23 = cad_td_p31g_dim3  ;
+DO cad_td_p3g_dimhc27 = cad_td_p31g_dim7  ;
+
+DO cad_td_p3g_ds3 = cad_td_p31g_ds3  + cad_td_p32g_ds3;
+DO cad_td_p3g_ds7 = cad_td_p31g_ds7  + cad_td_p32g_ds7;
+
+DO cad_td_p3g_dsm3 = cad_td_p31g_dsm3  + cad_td_p32g_dsm3;
+DO cad_td_p3g_dsm7 = cad_td_p31g_dsm7  + cad_td_p32g_dsm7;
+
+DO cad_td_p3g_hz3 = cad_td_p31g_hz3 ;
+DO cad_td_p3g_hz7 = cad_td_p31g_hz7 ;
+
+DO cad_td_p3g_iz3 = cad_td_p31g_iz3  ;
+DO cad_td_p3g_iz7 = cad_td_p31g_iz7  ;
+
+DO cad_td_p3g_jz3 = cad_td_p31g_jz3  ;
+DO cad_td_p3g_jz7 = cad_td_p31g_jz7  ;
+
+DO cad_td_p3g_lz3 = cad_td_p31g_lz3  ;
+DO cad_td_p3g_lz7 = cad_td_p31g_lz7  ;
+
+DO cad_td_p3g_dsn3 = cad_td_p31g_dsn3  + cad_td_p32g_dsn3;
+DO cad_td_p3g_dsn7 = cad_td_p31g_dsn7  + cad_td_p32g_dsn7;
+
+DO cad_td_p3g_mn3 =  cad_td_p31g_mn3	+ cad_td_p32g_mn3;
+DO cad_td_p3g_mn7 =  cad_td_p31g_mn7	+ cad_td_p32g_mn7;
+								
+DO cad_td_p3g_oq3 = cad_td_p31g_oq3  + cad_td_p32g_oq3;
+DO cad_td_p3g_oq7 = cad_td_p31g_oq7  + cad_td_p32g_oq7;
+
+DO cad_td_p3g_ru3 =  cad_td_p31g_ru3  +cad_td_p32g_ru3;
+DO cad_td_p3g_ru7 =  cad_td_p31g_ru7  +cad_td_p32g_ru7;
+
+// CONSO PRIVEE (MENAGES ET ISBLSM)
+DO cad_td_p3prive_d3 = cad_td_p3m_d3 + cad_td_p3p_d3 ;
+DO cad_td_p3prive_d7 = cad_td_p3m_d7 + cad_td_p3p_d7 ;
+
+// Consommation en produit BMNA des ménages
+DO cad_td_p3m_bmna3  = cad_td_p3m_d3 - cad_td_p3m_oq3 - cad_td_p3m_az3 ;
+DO cad_td_p3m_bmna7  = cad_td_p3m_d7 - cad_td_p3m_oq7 - cad_td_p3m_az7 ;
+
+// Consommation en produit BMNA des APU et des ISBLSM
+DO cad_td_p3gp_bmna3 = cad_td_p3g_d3 + cad_td_p3p_d3 - cad_td_p31g_oq3 - cad_td_p32g_oq3 - cad_td_p3p_oq3 ;
+DO cad_td_p3gp_bmna7 = cad_td_p3g_d7 + cad_td_p3p_d7 - cad_td_p31g_oq7 - cad_td_p32g_oq7 - cad_td_p3p_oq7 ;
+
+
+// ***********************************************
+// INVESTISSEMENT ET STOCKS
+// ***********************************************
+
+// *****  Reconstitution des stocks (p523)  ******
+DO cad_td_p523_d3 = cad_td_p52_d3 + cad_td_p53_d3 ;
+DO cad_td_p523_dim3 = cad_td_p52_dim3 + cad_td_p53_dim3 ;
+DO cad_td_p523_d7	=  cad_td_pib7+cad_td_p7_d7-cad_td_p3m_d7-cad_td_p51m_d7-cad_td_p51s_d7-cad_td_p3g_d7-cad_td_p51g_d7-cad_td_p3p_d7-cad_td_p51p_d7-cad_td_p51b_d7-cad_td_p6_d7;
+DO cad_td_p523_dim7	= (cad_td_p1_dim7-cad_td_p2_dim7+td_memp_dim7+td_temp_dim7+td_d231_dim7)-(-cad_td_p7_dim7+cad_td_p3m_dim7+cad_td_p3g_dim7+cad_td_p51_dim7+cad_td_p6_dim7);
+
+
+// FBC (Formation brute de capital y compris variations de Stocks)
+// Utilisé dans l'équation d'imports
+DO cad_td_p5_d7 = cad_td_p51_d7 + cad_td_p523_d7 ;
+DO cad_td_p5_d3 = cad_td_p51_d3 + cad_td_p523_d3 ;
+
+// INVESTISSEMENT HORS CONSTRUCTION
+DO cad_td_p51s_dhfz3 = cad_td_p51s_d3 - cad_td_p51s_fz3 ;
+DO cad_td_p51s_dhfz7 = cad_td_p51s_d7 - cad_td_p51s_fz7 ;
+
+DO cad_td_p51g_dhfz3 = cad_td_p51g_d3 - cad_td_p51g_fz3 ;
+DO cad_td_p51g_dhfz7 = cad_td_p51g_d7 - cad_td_p51g_fz7 ;
+
+	/// Investissement privé
+DO cad_td_p51prive_d7 = cad_td_p51s_d7 + cad_td_p51m_d7 + cad_td_p51b_d7 ;  
+DO cad_td_p51prive_d3 = cad_td_p51s_d3 + cad_td_p51m_d3 + cad_td_p51b_d3 ;  
+
+
+
+// *********** ATTENTION A NE PAS AVOIR DE VAR. DE STOCKS NUL EN VOLUME POUR LE CALCUL DE PRIX *********** 
+
+DO PRT.(1/cad_td_p523_d7);
+//do cad_td_p523_d1 = cad_td_p523_d1+1 ; // si besoin
+
+
+// ***********************************************
+// COMMERCE EXTERIEUR : Exports (P6) et Imports (P7)
+// ***********************************************
+
+	// Biens manufacturés 
+
+DO cad_td_p6_dim3 = cad_td_p6_di3 - cad_td_p6_de3;
+DO cad_td_p6_dim7 = cad_td_p6_di7 - cad_td_p6_de7;
+DO cad_td_p7_dim3 = cad_td_p7_di3 - cad_td_p7_de3;
+DO cad_td_p7_dim7 = cad_td_p7_di7 - cad_td_p7_de7;
+
+	// Services
+// Attention!! Implicitement, la correction CAF-FAB est intégré dans les importations de services
+DO cad_td_p6_serv3 = cad_td_p6_d3 - cad_td_p6_di3 - cad_td_p6_az3 - cad_td_p6_pchtr3 ;
+DO cad_td_p6_serv7 = cad_td_p6_d7 - cad_td_p6_di7 - cad_td_p6_az7 - cad_td_p6_pchtr7 ;
+
+DO cad_td_p7_serv3 = cad_td_p7_d3 - cad_td_p7_az3 - cad_td_p7_di3 - cad_td_p7_pchtr3 ;
+DO cad_td_p7_serv7 = cad_td_p7_d7 - cad_td_p7_az7- cad_td_p7_di7  - cad_td_p7_pchtr7 ;
+
+	// Services marchands
+DO cad_td_p6_dsm3 = cad_td_p6_gz3 + cad_td_p6_hz3 + cad_td_p6_jz3 + cad_td_p6_kz3 + cad_td_p6_mn3 + cad_td_p6_ru3  ;
+DO cad_td_p6_dsm7 = cad_td_p6_gz7 + cad_td_p6_hz7 + cad_td_p6_jz7 + cad_td_p6_kz7 + cad_td_p6_mn7 + cad_td_p6_ru7  ;
+
+DO cad_td_p7_dsm3 = cad_td_p7_gz3 + cad_td_p7_hz3 + cad_td_p7_jz3 + cad_td_p7_kz3 + cad_td_p7_mn3 + cad_td_p7_ru3 ;
+DO cad_td_p7_dsm7 = cad_td_p7_gz7 + cad_td_p7_hz7 + cad_td_p7_jz7 + cad_td_p7_kz7 + cad_td_p7_mn7 + cad_td_p7_ru7 ;
+
+	// DE et C2 ensemble
+DO cad_td_p6_dec23 = cad_td_p6_de3  + cad_td_p6_c23 ;
+DO cad_td_p6_dec27 = cad_td_p6_de7  + cad_td_p6_c27 ;
+DO cad_td_p7_dec23 = cad_td_p7_de3  + cad_td_p7_c23 ;
+DO cad_td_p7_dec27 = cad_td_p7_de7  + cad_td_p7_c27 ;
+
+    // Total hors DE
+DO cad_td_p7_dhde3 = cad_td_p7_d3 - cad_td_p7_de3 ;
+DO cad_td_p7_dhde7 = cad_td_p7_d7 - cad_td_p7_de7 ;	
+DO cad_td_p6_dhde3 = cad_td_p6_d3 - cad_td_p6_de3 ;
+DO cad_td_p6_dhde7 = cad_td_p6_d7 - cad_td_p6_de7 ;
+
+    // Total hors DE et C2
+DO cad_td_p7_dhdec23 = cad_td_p7_d3 - cad_td_p7_de3  - cad_td_p7_c23 ;
+DO cad_td_p7_dhdec27 = cad_td_p7_d7 - cad_td_p7_de7  - cad_td_p7_c27 ;
+DO cad_td_p6_dhdec23 = cad_td_p6_d3 - cad_td_p6_de3  - cad_td_p6_c23 ;
+DO cad_td_p6_dhdec27 = cad_td_p6_d7 - cad_td_p6_de7  - cad_td_p6_c27 ;
+
+	// Manuf hors C2
+DO cad_td_p7_dimhc27 = cad_td_p7_dim7 - cad_td_p7_c27 ;
+DO cad_td_p7_dimhc23 = cad_td_p7_dim3 - cad_td_p7_c23 ;
+DO cad_td_p6_dimhc27 = cad_td_p6_dim7 - cad_td_p6_c27 ;
+DO cad_td_p6_dimhc23 = cad_td_p6_dim3 - cad_td_p6_c23 ;
+
+
+	// En biens: importations de biens = importations de bien agricoles + importations de biens industriels ('di' désigne le secteur industriel au sens de l'Insee)
+DO cad_td_p6_db3 = cad_td_p6_az3 + cad_td_p6_di3 ;
+DO cad_td_p6_db7 = cad_td_p6_az7 + cad_td_p6_di7;
+DO cad_td_p7_db3 = cad_td_p7_az3 + cad_td_p7_di3 ;
+DO cad_td_p7_db7 = cad_td_p7_az7 + cad_td_p7_di7 ;
+
+	// En biens manufacturés et services
+DO cad_td_p6_dimserv3 = cad_td_p6_dim3 + cad_td_p6_serv3 ;
+DO cad_td_p6_dimserv7 = cad_td_p6_dim7 + cad_td_p6_serv7;
+DO cad_td_p7_dimserv3 = cad_td_p7_dim3 + cad_td_p7_serv3 ;
+DO cad_td_p7_dimserv7 = cad_td_p7_dim7 + cad_td_p7_serv7 ;
+
+	// Exports de produits BMNA
+DO cad_td_p6_bmna3   = cad_td_p6_d3 - cad_td_p6_oq3 - cad_td_p6_az3 ;
+DO cad_td_p6_bmna7   = cad_td_p6_d7 - cad_td_p6_oq7 - cad_td_p6_az7 ;
+DO cad_td_p7_bmna3   = cad_td_p7_d3 - cad_td_p7_oq3 - cad_td_p7_az3 ;
+DO cad_td_p7_bmna7   = cad_td_p7_d7 - cad_td_p7_oq7 - cad_td_p7_az7 ;
+
+	// Solde du commerce extérieur
+DO cad_td_comext_d3   = cad_td_p6_d3 - cad_td_p7_d3 ;
+DO cad_td_comext_d7   = cad_td_p6_d7 - cad_td_p7_d7 ;
+
+DO cad_td_comext_az3   = cad_td_p6_az3 - cad_td_p7_az3 ;
+DO cad_td_comext_az7   = cad_td_p6_az7 - cad_td_p7_az7 ;
+
+DO cad_td_comext_dim3   = cad_td_p6_dim3 - cad_td_p7_dim3 ;
+DO cad_td_comext_dim7   = cad_td_p6_dim7 - cad_td_p7_dim7 ;
+
+DO cad_td_comext_de3   = cad_td_p6_de3 - cad_td_p7_de3 ;
+DO cad_td_comext_de7   = cad_td_p6_de7 - cad_td_p7_de7 ;
+
+DO cad_td_comext_serv3   = cad_td_p6_serv3 - cad_td_p7_serv3 ;
+DO cad_td_comext_serv7   = cad_td_p6_serv7 - cad_td_p7_serv7 ;
+
+DO cad_td_comext_pchtr3   = cad_td_p6_pchtr3 - cad_td_p7_pchtr3 ;
+DO cad_td_comext_pchtr7   = cad_td_p6_pchtr7 - cad_td_p7_pchtr7 ;
+
+	// Balances commerciales (en valeur)
+DO 	cad_balcom_d3		= (cad_td_p6_d3 	- 	cad_td_p7_d3		) / 1000;
+DO 	cad_balcom_az3		= (cad_td_p6_az3 	- 	cad_td_p7_az3		) / 1000;
+DO 	cad_balcom_db3		= (cad_td_p6_db3 	- 	cad_td_p7_db3		) / 1000;
+DO 	cad_balcom_dim3		= (cad_td_p6_dim3 	- 	cad_td_p7_dim3		) / 1000;
+DO 	cad_balcom_dimhc23	= (cad_td_p6_dimhc23 	- 	cad_td_p7_dimhc23		) / 1000;
+DO 	cad_balcom_de3		= (cad_td_p6_de3 	- 	cad_td_p7_de3		) / 1000;
+DO 	cad_balcom_c23		= (cad_td_p6_c23 	- 	cad_td_p7_c23		) / 1000;
+DO 	cad_balcom_dec23	= (cad_td_p6_dec23 	- 	cad_td_p7_dec23		) / 1000;
+DO 	cad_balcom_serv3	= (cad_td_p6_serv3 	- 	cad_td_p7_serv3		) / 1000;
+DO 	cad_balcom_pchtr3	= (cad_td_p6_pchtr3 - 	cad_td_p7_pchtr3	) / 1000;
+
+// ***********************************************
+// CONSOMMATION INTERMEDIAIRE
+// ***********************************************
+
+// en produit
+
+DO cad_td_p2_dec23 = cad_td_p2_c23 + cad_td_p2_de3 ;
+DO cad_td_p2_dec27 = cad_td_p2_c27 + cad_td_p2_de7 ;
+
+DO cad_td_p2_dhdec23 = cad_td_p2_d3 - cad_td_p2_c23 - cad_td_p2_de3 ;
+DO cad_td_p2_dhdec27 = cad_td_p2_d7 - cad_td_p2_c27 - cad_td_p2_de7 ;
+
+// Calcul des CI des branches bmna
+DO cad_td_p2e_bmna7 = cad_td_p2e_d7 - cad_td_p2e_az7 - cad_td_p2e_oq7 ;
+DO cad_td_p2e_bmna3 = cad_td_p2e_d3 - cad_td_p2e_az3 - cad_td_p2e_oq3 ;
+
+// Calcul des CI des branches bmna hors énergie
+DO cad_td_p2e_bmnahdec27 = cad_td_p2e_bmna7 - cad_td_p2e_de7 - cad_td_p2e_c27 ;
+DO cad_td_p2e_bmnahdec23 = cad_td_p2e_bmna3 - cad_td_p2e_de3 - cad_td_p2e_c23 ;
+
+// Services marchands
+DO cad_td_p2e_dsm3 = cad_td_p2e_gz3 + cad_td_p2e_hz3 + cad_td_p2e_iz3 + cad_td_p2e_jz3 + cad_td_p2e_kz3 + cad_td_p2e_lz3 + cad_td_p2e_mn3 + cad_td_p2e_ru3  ;
+DO cad_td_p2e_dsm7 = cad_td_p2e_gz7 + cad_td_p2e_hz7 + cad_td_p2e_iz7 + cad_td_p2e_jz7 + cad_td_p2e_kz7 + cad_td_p2e_lz7 + cad_td_p2e_mn7 + cad_td_p2e_ru7  ;
+
+
+// *************************************************************
+// ******** Décomposition PIB = VA + D21 + D31 = P1 - P2 *******
+// *************************************************************
+
+// Impôts nets de subventions: D231 = D21 + D31. Par convention, D31 est toujours négatif.
+DO cad_td_d231_d7 = cad_td_pib7 - cad_td_b1_d7 ;
+DO cad_td_d231_d3 = cad_td_pib3 - cad_td_b1_d3 ;
+
+
+// Recalcul de la VA bmna: VA totale - VA agricole - VA des branches non marchandes
+DO cad_td_b1_bmna7 = cad_td_b1_d7 - cad_td_b1_az7 - cad_td_b1_oq7 ;
+DO cad_td_b1_bmna3 = cad_td_b1_d3 - cad_td_b1_az3 - cad_td_b1_oq3 ;
+
+// Calcul de la VA bmna hors KZ et hors LZ (pour comparaison avec le champ SNF)
+DO cad_td_b1_bmnahkz7   = cad_td_b1_bmna7 - cad_td_b1_kz7 ;
+DO cad_td_b1_bmnahkz3   = cad_td_b1_bmna3 - cad_td_b1_kz3 ;
+DO cad_td_b1_bmnahkzlz7 = cad_td_b1_bmna7 - cad_td_b1_kz7 - cad_td_b1_lz7 ;
+DO cad_td_b1_bmnahkzlz3 = cad_td_b1_bmna3 - cad_td_b1_kz3 - cad_td_b1_lz3 ;
+
+DO cad_td_b1_dsm3 = cad_td_b1_gz3 + cad_td_b1_hz3 + cad_td_b1_iz3 + cad_td_b1_jz3 + cad_td_b1_kz3 + cad_td_b1_lz3 + cad_td_b1_mn3 + cad_td_b1_ru3  ;
+DO cad_td_b1_dsm7 = cad_td_b1_gz7 + cad_td_b1_hz7 + cad_td_b1_iz7 + cad_td_b1_jz7 + cad_td_b1_kz7 + cad_td_b1_lz7 + cad_td_b1_mn7 + cad_td_b1_ru7  ;
+
+// Calcul des marges de commerce des branches bmna
+DO cad_td_memp_bmna7 = cad_td_memp_di7 ;     //di = branches industrielles 
+DO cad_td_memp_bmna3 = cad_td_memp_di3 ;
+
+
+// Calcul de la prod effective des branches bmna: production effective totale - production effective agricole - production effective non marchande
+DO cad_td_p1e_bmna7 = cad_td_p1e_d7 - cad_td_p1e_az7 - cad_td_p1e_oq7 ;
+DO cad_td_p1e_bmna3 = cad_td_p1e_d3 - cad_td_p1e_az3 - cad_td_p1e_oq3 ;
+
+// Production des branches BMNA destinée au marché intérieur = production effective des BMNA - exportations des BMNA
+DO cad_td_p1mi_bmna7 = cad_td_p1e_bmna7 - (cad_td_p6_d7 - cad_td_p6_az7 )  ;
+DO cad_td_p1mi_bmna3 = cad_td_p1e_bmna3 - (cad_td_p6_d3 - cad_td_p6_az3 ) ;
+
+// Production des branches BMNA destinée au marché intérieur hors marges de commerce
+// Note: Cet agrégat sert à regarder les prix à la production destinée au marché intérieur sur le secteur BMNA
+DO cad_td_p1mi_bmnahj7 = cad_td_p1e_bmna7 - cad_td_memp_bmna7 - ( cad_td_p6_d7 - cad_td_p6_az7 )  ;
+DO cad_td_p1mi_bmnahj3 = cad_td_p1e_bmna3 - cad_td_memp_bmna3 - ( cad_td_p6_d3 - cad_td_p6_az3 ) ;
+
+// Production des branches BMNA hors immobilier et activités financières et d'assurances
+DO cad_td_p1e_bmnahkzlz7 = cad_td_p1e_bmna7 - cad_td_p1e_kz7 - cad_td_p1e_lz7 ;
+DO cad_td_p1e_bmnahkzlz3 = cad_td_p1e_bmna3 - cad_td_p1e_kz3 - cad_td_p1e_lz3 ;
+
+// Production des branches BMNA hors marges de commerce et de transport
+DO cad_td_p1e_bmnahj7 = cad_td_p1e_bmna7 - cad_td_memp_bmna7 ;
+DO cad_td_p1e_bmnahj3 = cad_td_p1e_bmna3 - cad_td_memp_bmna3 ;
+
+// Production des branches de services
+DO cad_td_p1e_dsm3 = cad_td_p1e_gz3 + cad_td_p1e_hz3 + cad_td_p1e_iz3 + cad_td_p1e_jz3 + cad_td_p1e_kz3 + cad_td_p1e_lz3 + cad_td_p1e_mn3 + cad_td_p1e_ru3  ;//voir lz
+DO cad_td_p1e_dsm7 = cad_td_p1e_gz7 + cad_td_p1e_hz7 + cad_td_p1e_iz7 + cad_td_p1e_jz7 + cad_td_p1e_kz7 + cad_td_p1e_lz7 + cad_td_p1e_mn7 + cad_td_p1e_ru7  ;//voir lz
+
+	// Production destinée au marché intérieure
+DO cad_td_p1mi_d7 = cad_td_p1e_d7 - cad_td_p6_d7 ;
+DO cad_td_p1mi_d3 = cad_td_p1e_d3 - cad_td_p6_d3 ;
+
+	// Production manuf destinée au marché intérieure
+DO cad_td_p1mi_dim7 = cad_td_p1e_dim7 - cad_td_p6_dim7 ;
+DO cad_td_p1mi_dim3 = cad_td_p1e_dim3 - cad_td_p6_dim3 ;
+
+	// Production manuf destinée au marché intérieure - Hors C2
+DO cad_td_p1mi_dimhc27 = cad_td_p1e_dim7 - cad_td_p1e_c27 - (cad_td_p6_dim7 - cad_td_p6_c27) ;
+DO cad_td_p1mi_dimhc23 = cad_td_p1e_dim3 - cad_td_p1e_c23 - (cad_td_p6_dim3 - cad_td_p6_c23) ;
+
+
+// ****************************************************
+// ******** Autres variables comptables du TES ********
+// ****************************************************
+
+	/// Ressources totales = PIB + Importations
+DO cad_td_rnt_d7 = cad_td_pib7 + cad_td_p7_d7 ;  
+DO cad_td_rnt_d3 = cad_td_pib3 + cad_td_p7_d3 ; 
+	/// Ressources totales hors stocks = PIB + Importations - Stocks =
+DO cad_td_rnths_dim7 = cad_TD_P3M_dim7 + cad_TD_P31G_dim7 + cad_TD_P51_dim7 /*+ cad_TD_P52_dim7 + cad_TD_P53_dim7 */ 	; 
+DO cad_td_rnths_dim3 = cad_TD_P3M_DIM3 + cad_TD_P31G_DIM3 + cad_TD_P51_DIM3 /*+ cad_TD_P52_DIM3 + cad_TD_P53_dim3 */		; 
+	// PIB hors variations de stocks
+DO cad_td_pibhs7 = cad_td_pib7 - cad_td_p523_d7 ; 
+DO cad_td_pibhs3 = cad_td_pib3 - cad_td_p523_d3 ;
+	// Ressources totales hors variations de stocks
+DO cad_td_dhs_d7 = cad_td_rnt_d7 - cad_td_p523_d7 ;
+DO cad_td_dhs_d3 = cad_td_rnt_d3 - cad_td_p523_d3;
+	/// Ressources intérieures totales en produit = production pour le marché intérieur + Importations
+DO cad_td_rit_d7 = cad_td_p1mi_d7 + cad_td_p7_d7 ;  
+DO cad_td_rit_d3 = cad_td_p1mi_d3 + cad_td_p7_d3 ; 
+//DO cad_td_rit_d1 = cad_td_p1mi_d1 + cad_td_p7_d1 ; 
+
+	// Demande intérieure finale
+DO cad_td_dint_d7 = cad_td_pib7 + td_p7_d7 - td_p6_d7 ;
+DO cad_td_dint_d3 = cad_td_pib3 + td_p7_d3 - td_p6_d3 ;
+	// Demande intérieure finale hors variations de stocks
+DO cad_td_dinths_d7 = cad_td_dint_d7 - cad_td_p523_d7 ;
+DO cad_td_dinths_d3 = cad_td_dint_d3 - cad_td_p523_d3 ;
+	/// Demande intérieure totale = P2 + P3 + P5
+DO cad_td_dinttot_d7 = cad_td_p2e_bmna7 + cad_td_p3m_d7 + cad_td_p3g_d7 + cad_td_p3p_d7 + cad_td_p5_d7 ;  
+DO cad_td_dinttot_d3 = cad_td_p2e_bmna3 + cad_td_p3m_d3 + cad_td_p3g_d3 + cad_td_p3p_d3 + cad_td_p5_d3 ; 
+
+	/// Demande totale 			  = P2 + P3 + P5 + P6
+DO cad_td_dtot_d7 	 = cad_td_p2e_bmna7 + cad_td_p3m_d7 + cad_td_p3g_d7 + cad_td_p3p_d7 + cad_td_p5_d7 + cad_td_p6_d7;  
+DO cad_td_dtot_d3 	 = cad_td_p2e_bmna3 + cad_td_p3m_d3 + cad_td_p3g_d3 + cad_td_p3p_d3 + cad_td_p5_d3 + cad_td_p6_d3 ; 
+	// Demande finale en biens manufacturés
+DO cad_td_df_dim7 = cad_td_p1_dim7+cad_td_p7_dim7+cad_td_d211_dim7+cad_td_d212_dim7+cad_td_d214_dim7+cad_td_memp_dim7+cad_td_temp_dim7+cad_td_d319_dim7-cad_td_p2_dim7 ;
+DO cad_td_df_dim3 = cad_td_p1_dim3+cad_td_p7_dim3+cad_td_d211_dim3+cad_td_d212_dim3+cad_td_d214_dim3+cad_td_memp_dim3+cad_td_temp_dim3+cad_td_d319_dim3-cad_td_p2_dim3 ;
+	// Demande finale en biens manufacturés
+DO cad_td_dint_dim7 = cad_td_df_dim7 - cad_td_p6_dim7;
+DO cad_td_dint_dim3 = cad_td_df_dim3 - cad_td_p6_dim3;
+
+	// DEMANDE PUBLIQUE
+DO cad_td_dempub3   = cad_td_p3g_d3 + cad_td_p51g_d3 ;
+DO cad_td_dempub7   = cad_td_p3g_d7 + cad_td_p51g_d7 ;
+
+
+// ****************************************************************************
+// *****  Construction des séries utiles à partir des séries agrégées :   *****
+// *****             prix A-1, volume chaîné, prix chaîné                 *****
+// ****************************************************************************
+
+DO output=C.(
+             /* Approche demande*/
+             "td_p3prive_d",  "td_p3g_d", /*"tc_p3g_d",*/ "td_p3g_db", "td_p3g_dim", "td_p3g_c1", "td_p3g_c3", "td_p3g_c4", "td_p3g_c5", "td_p3g_dimhc2",  "td_p3g_ds", "td_p3g_dsm", "td_p3g_hz",   "td_p3g_iz",  "td_p3g_jz", "td_p3g_lz", "td_p3g_mn",  "td_p3g_ru", "td_p3g_dsn", "td_p3g_oq", 
+             "td_p3gp_bmna", "td_p3m_bmna",
+             "td_p3m_dimhc2",
+			 "td_d231_d",	"td_d231_db", "td_d231_di",		"td_d231_dim", //"td_d231_az",			"td_d231_c1",		"td_d231_c2",		"td_d231_c3",		"td_d231_c4",		"td_d231_c5",		"td_d231_de",		"td_d231_fz",		"td_d231_dsm",	"td_d231_gz",		"td_d231_hz",		"td_d231_iz",		"td_d231_jz",		"td_d231_kz",		"td_d231_lz",		"td_d231_mn",		"td_d231_ru",	"td_d231_dsn","td_d231_oq",
+
+             "td_p5_d",	"td_p51s_dhfz", "td_p51g_dhfz",  /*"tc_p51s_dhfz",*/"td_p51prive_d",
+             "td_p6_db", "td_p6_dim", "td_p6_dhde", "td_p6_dimserv", "td_p6_bmna", "td_p6_dimhc2", /*"tc_p6_dimhc2",*/ "td_p6_dhdec2", "td_p6_dec2", "td_p6_serv", "td_p6_dsm",
+             "td_p7_db", "td_p6_dim", "td_p7_dhde", "td_p7_dimserv", "td_p6_bmna", "td_p7_dimhc2", /*"tc_p7_dimhc2",*/ "td_p7_dhdec2", "td_p7_dec2", "td_p7_serv", "td_p7_dsm",
+             "td_comext_d", "td_comext_az", "td_comext_dim", "td_comext_de", "td_comext_serv", "td_comext_pchtr",
+        	/* Approche offre */
+        	 "td_d231_d",
+             /*"tc_b1_bmna"*/, "td_b1_bmna","td_b1_bmnahkz", "td_b1_dsm",  "td_b1_bmnahkzlz",
+             "td_p2e_bmna",	"td_p2_dhdec2", "td_p2_dec2", "td_p2e_bmnahdec2",	 "td_p2e_dsm",
+             "td_p1e_bmna",  "td_p1e_bmnahj", "td_p1e_bmnahkzlz", "td_p1e_dsm",
+             "td_p1mi_d",    "td_p1mi_bmna","td_p1mi_dim",  "td_p1mi_dimhc2", "td_p1mi_bmnahj",
+             "td_memp_bmna", 
+             /* Autres agrégats */
+             "td_pibhs",
+             "td_dinttot_d", "td_dinths_d", "td_dint_d",  "td_dint_dim", "td_df_dim","td_dtot_d",
+             "td_rit_d", "td_rnt_d",   "td_dhs_d",                
+             "td_comext_d", "td_dempub", "td_rnths_dim"
+        );
+
+DO output0    = output||"0";
+DO output5_ch = output||"5_ch";
+DO output7    = output||"7";
+DO output7_ch = output||"7_ch";
+DO output3    = output||"3";
+
+&execmd "do cad_@(output0)    = pxbasevolvo'f(cad_@(output7),cad_@(output3))" ";" ; // prix A-1 à partir vol. prix A-1 et valeur
+&execmd "do cad_@(output7_ch) = cad_@(output7)/cad_@(output0)" ";" ;
+&execmd "do cad_@(output5_ch) = 100*cad_@(output3)/cad_@(output7_ch)" ";";
+
+// les contributions des variations de stocks à la croissance du PIB sont calculés via
+// l'évolution des logarithme des ratios PIB / PIB hors stocks (en valeur, prix et volume)
+
+DO cad_p523_d3_log_ratio 	= LOG(cad_td_pib3) - LOG(cad_td_pibhs3) ;
+DO cad_p523_d5_log_ratio	= LOG(cad_td_pib5_ch) - LOG(cad_td_pibhs5_ch) ;
+DO cad_p523_d7_log_ratio	= LOG(cad_td_pib7_ch) - LOG(cad_td_pibhs7_ch) ;
+
+//**************************************************************************************************************************
+//**************************************************************************************************************************
+//			CALCUL DES CONTRIBUTIONS AU PIB
+//**************************************************************************************************************************
+//**************************************************************************************************************************
+
+DOSAVE liste = C.("td_pib",
+				  "td_dint_d", "td_dinths_d",
+				  "td_p3m_d", "td_p3g_d", "td_p3g_db", "td_p3g_dim", "td_p3g_dimhc2", "td_p3g_dsm",  "td_p3g_dsn",  "td_p3p_d",
+				  "td_p51_d",	"td_p51s_d", "td_p51s_dhfz",  "td_p51s_fz","td_p51b_d","td_p51m_d", "td_p51g_d",  "td_p51p_d", 
+                  "td_p6_d",	"td_p6_az","td_p6_dim","td_p6_de","td_p6_serv","td_p6_pchtr",
+                  "td_p7_d",	"td_p7_az","td_p7_dim","td_p7_de","td_p7_serv","td_p7_pchtr",
+		          "td_b1_d", "td_b1_az", "td_b1_bmna", "td_b1_oq", "td_d231_d",
+		          "td_p1e_bmna","td_p1e_bmnahj", "td_memp_bmna", "td_p2e_bmna");
+DOSAVE liste_p7 = C.("td_p7_d", "td_p7_az","td_p7_dim","td_p7_de","td_p7_serv","td_p7_pchtr");		          
+
+DOSAVE liste0        = liste    ||"0";
+DOSAVE liste3        = liste    ||"3";
+DOSAVE liste7        = liste    ||"7";
+DOSAVE liste7_ch     = liste7   ||"_ch" ;
+DOSAVE liste7_ch_ann = liste7_ch||"_ann" ;
+			
+// Pour chaque variable, on calcule la moyenne annuelle et on la présente en série trimestrielle 			
+&execmd "DO @(liste7_ch_ann) = convts(compact(@(liste7_ch),0,1),2,1,3) ;" ";"
+
+// Contribution en volume
+&execmd "DO cad_contpib7_@(liste)      =  100*((@(liste7)/td_pib0)-(@(liste7)/td_pib0)(-1))/td_pib7_ch(-1)
+                                        - 100*(@(liste7_ch_ann)/td_pib7_ch_ann)(-4)*((@(liste0)/td_pib0) - (@(liste0)/td_pib0)(-1)) ;" ";"
+
+// Contribution en volume
+&execmd "DO cad_contpib3_@(liste) =   100 * (@(liste3) - @(liste3)(-1) ) / td_pib3(-1) ;" ";"
+
+// Contribution en prix
+&execmd "DO cad_contpib5_@(liste) =   cad_contpib3_@(liste)  - cad_contpib7_@(liste) ;" ";"
+
+/* Pour les importations le signe de la contribution est opposé */
+&execmd "DO cad_contpib7_@(liste_p7)  =  - cad_contpib7_@(liste_p7) ;" ";"
+&execmd "DO cad_contpib3_@(liste_p7)  =  - cad_contpib3_@(liste_p7) ;" ";"
+&execmd "DO cad_contpib5_@(liste_p7)  =  - cad_contpib5_@(liste_p7) ;" ";"
+
+// Solde sur les stocks
+DO cad_contpib3_td_p523_d =  cad_contpib3_td_pib - cad_contpib3_td_p7_d - cad_contpib3_td_p6_d
+                                   - contpib3_td_p51s_d - contpib3_td_p51b_d - contpib3_td_p51m_d - contpib3_td_p51g_d  - contpib3_td_p51p_d
+			                       - contpib3_td_p3m_d - contpib3_td_p3g_d - contpib3_td_p3p_d ; 
+DO cad_contpib7_td_p523_d =  cad_contpib7_td_pib - cad_contpib7_td_p7_d - cad_contpib7_td_p6_d
+                                   - cad_contpib7_td_p51s_d - cad_contpib7_td_p51b_d - cad_contpib7_td_p51m_d - cad_contpib7_td_p51g_d  - cad_contpib7_td_p51p_d
+			                       - cad_contpib7_td_p3m_d - cad_contpib7_td_p3g_d - cad_contpib7_td_p3p_d ; 
+DO cad_contpib5_td_p523_d =  cad_contpib5_td_pib - cad_contpib5_td_p7_d - cad_contpib5_td_p6_d
+                                   - cad_contpib5_td_p51s_d - cad_contpib5_td_p51b_d - cad_contpib5_td_p51m_d - cad_contpib5_td_p51g_d  - cad_contpib5_td_p51p_d
+			                       - cad_contpib5_td_p3m_d - cad_contpib5_td_p3g_d - cad_contpib5_td_p3p_d ;
+			                       
+// Commerce extérieur
+DO cad_contpib3_td_comext_d =  cad_contpib3_td_p6_d + cad_contpib3_td_p7_d;
+DO cad_contpib5_td_comext_d =  cad_contpib5_td_p6_d + cad_contpib5_td_p7_d;
+DO cad_contpib7_td_comext_d =  cad_contpib7_td_p6_d + cad_contpib7_td_p7_d;
+
+// Commerce demande publique
+DO cad_contpib3_td_dempub =  cad_contpib3_td_p3g_d + cad_contpib3_td_p51g_d;
+DO cad_contpib5_td_dempub =  cad_contpib5_td_p3g_d + cad_contpib5_td_p51g_d;
+DO cad_contpib7_td_dempub =  cad_contpib7_td_p3g_d + cad_contpib7_td_p51g_d;
+
+
+
+
+//**************************************************************************************************************************
+//**************************************************************************************************************************
+// 		Construction de séries intermédiaires pour le TEE
+//**************************************************************************************************************************
+//**************************************************************************************************************************
+
+	// Salaires
+
+// Calcul des variables d'emploi et de salaire
+
+
+DO cad_tc_d11_d3      = cad_tc_d11_fz3 + cad_tc_d11_de3 + cad_tc_d11_az3 +  cad_tc_d11_oq3 + cad_tc_d11_dim3 + cad_tc_d11_dsm3 ;
+DO cad_tc_d11_bmna3   = ( cad_tc_d11_d3 - cad_tc_d11_az3 - cad_tc_d11_oq3 ) ;
+
+
+DO cad_tc_d12_d3		= cad_tc_d121_d3 +  cad_tc_d122_d3 ;
+DO cad_tc_d12_az3		= ( cad_tc_d121_az3 + cad_tc_d122_az3 ) ; // variable pas directement utilisée dans le modèle
+DO cad_tc_d12_oq3		= ( cad_tc_d121_oq3 + cad_tc_d122_oq3 ) ; // variable pas directement utilisée dans le modèle
+DO cad_tc_d12_bmna3		= ( cad_tc_d12_d3 - cad_tc_d121_az3 - cad_tc_d121_oq3 - cad_tc_d122_az3 - cad_tc_d122_oq3 ) ;
+
+DO cad_tc_d1_bmna3		= cad_tc_d11_bmna3 + cad_tc_d12_bmna3 ; // Rémunération super-brute des salariés des BMNA
+
+
+	// Emploi
+
+DO cad_tc_emp_d1      = cad_tc_emps_d1 + cad_tc_empns_d1 ;
+DO cad_tc_emps_bmna1  = cad_tc_emps_d1 - ( cad_tc_emps_az1 + cad_tc_emps_oq1 ) ;
+DO cad_tc_emps_serv1  = cad_tc_emps_bmna1 - ( cad_tc_emps_c11 + cad_tc_emps_c21 + cad_tc_emps_c31 + cad_tc_emps_c41 + cad_tc_emps_c51 ) ;
+
+DO cad_smpt_bmna 		= cad_tc_d11_bmna3 / cad_tc_emps_bmna1 ;
+
+DO cad_tc_empT_bmna1	= cad_tc_empT_d1 - ( cad_tc_empT_az1 + cad_tc_empT_oq1 ) ;
+DO cad_tc_empT_bmna7	= cad_tc_empT_d7 - ( cad_tc_empT_az7 + cad_tc_empT_oq7 ) ;
+DO cad_tc_empNS_bmna1	= cad_tc_empNS_d1 - ( cad_tc_empNS_az1 + cad_tc_empNS_oq1 ) ;
+DO cad_tc_empNS_bmna7	= cad_tc_empNS_d7 - ( cad_tc_empnS_az7 + cad_tc_empNS_oq7 ) ;
+
+
+	// Emploi en équivalent temps plein
+DO cad_tc_emps_bmna7 = cad_tc_emps_d7 - ( cad_tc_emps_az7 + cad_tc_emps_oq7 ) ;
+DO cad_tc_emp_d7 = cad_tc_emps_d7 + cad_tc_empns_d7 ;
+
+
+	// Calcul du RDB
+	
+	// Calcul du RDB issu des tranferts des APU
+		// e indique un montant versé (emploi); r indique un montant reçu (ressource)
+DO cad_tc_d5_s14e3  = cad_tc_d51_s14e3  + cad_tc_d59_s14e3 ;
+DO cad_tc_d61_s14e3 = cad_TC_D613Z_S14E3;
+
+DO cad_tc_d62_s14r3 = cad_TC_D621_S14R3 + cad_TC_D622_S14R3 + cad_TC_D623_S14R3 ;
+
+
+// Tranferts reçus par les ménages nets des transferts versés
+DO cad_tc_b6trans_s143	= - ( cad_tc_d5_s14e3 ) - ( cad_tc_d61_s14e3 ) + ( cad_tc_d62_s14r3 ) ;
+
+
+// Calcul du RDB issu des revenus financiers
+// Intérêts reçus nets des intérêts versés
+
+DO cad_tc_d41_s14s3  = cad_tc_d41_s14r3 - cad_tc_d41_s14e3 ;
+DO cad_tc_d42_s14s3  = cad_tc_d42_s14r3 ; // pas de d42e pour le s14
+DO cad_tc_d4z_s14s3  = cad_tc_d44_s14r3 + (cad_tc_d45_s14r3 - cad_tc_d45_s14e3) ;
+DO cad_tc_b6fin_s143 = cad_tc_d41_s14s3 + cad_tc_d42_s14s3 + cad_tc_d4z_s14s3 ;
+
+	// Calcul du RDB issu des revenus d'activité et du reste du RDB
+DO cad_td_b1_s143		= cad_td_b1_s14a3 + cad_td_b1_s14b3 ; 	  // ceci n'est pas directement utilisé dans le modèle; VA des ménages = VA des EI + VA des ménages purs
+DO cad_td_b2_s143		= cad_td_b2_s14a3 + cad_td_b2_s14b3 ; // EBE des ménages = EBE des EI + EBE des ménages purs
+DO cad_td_d11b2_s14r3	= cad_td_b2_s143 + cad_tc_d11_s14r3 - cad_tc_d11_az3 - cad_tc_d11_bmna3 - cad_tc_d11_oq3; // autres revenus d'activité
+
+DO cad_td_b6act_s143	= cad_td_d11b2_s14r3 + cad_tc_d11_az3 + cad_tc_d11_bmna3 + cad_tc_d11_oq3; // Revenus d'activités totaux = salaires bruts des salariés BMNA + EBE des ménages + salaires des salariés hors BMNA
+DO cad_td_b6aut_s143	= cad_td_b6_s143 - ( cad_tc_b6fin_s143 + cad_td_b6act_s143 + cad_tc_b6trans_s143 ) ;
+DO cad_taux_epargne_S14	= 100* ( 1- cad_td_p3m_d3 / cad_td_b6_s143 ) ;
+
+DO  cad_TD_B6_S141_P3MD5= cad_td_b6_s143 / cad_td_p3m_d5_ch;
+
+// Calcul des CSU - coût salariaux unitaires, des CUI - coûts unitaires des CI 
+// et de l'EBE des branches bmna
+
+DO cad_tc_d29_bmna3 = cad_tc_d29_fz3 + cad_tc_d29_de3  + cad_tc_d29_dim3 + cad_tc_d29_dsm3  ;
+DO cad_tc_d39_bmna3 = cad_tc_d39_fz3 + cad_tc_d39_de3 + cad_tc_d39_dim3 + cad_tc_d39_dsm3 ;
+DO cad_tc_d239_bmna3 = cad_tc_d29_bmna3 + cad_tc_d39_bmna3  ;
+	// EBE total = VA totale - impôts sur la productions nets de subventions sur la production
+DO cad_td_b2_d3 = td_b1_d3 - tc_d239_bmna3 - tc_d29_az3 - tc_d29_oq3 - tc_d39_az3 - tc_d39_oq3 - tc_d11_d3 - tc_d12_d3;
+DO cad_td_b2_bmna3 = cad_td_b2_d3 - cad_td_b2_az3 - cad_td_b2_oq3 ;
+
+	// Les CSU et CUCI sont calculés avec la production et la VA en volume chaîné car le CSU est homogène à un prix (c'est une variable nominale)
+DO cad_csu_D1_D239_P1_bmna			= ( cad_tc_d11_bmna3 + cad_tc_d12_bmna3 + cad_tc_d239_bmna3 )/ cad_td_p1e_bmna7_ch ;
+DO cad_csu_D1_D239_P1_bmna_lisse	= ( csu_D1_D239_p1_bmna + csu_D1_D239_p1_bmna(-1) + csu_D1_D239_p1_bmna(-2) + csu_D1_D239_p1_bmna(-3) )/4 ;
+DO cad_cui_P1_bmna	= cad_td_p2e_bmna3 / cad_td_p1e_bmna7_ch ;
+
+DO cad_csu_D1_B1_bmna	= ( cad_tc_d11_bmna3 + cad_tc_d12_bmna3)/ cad_td_b1_bmna7_ch ;
+DO cad_csu_D1_pib		= cad_tc_d1_d3 / cad_td_pib7_ch ;
+
+
+DO	cad_prod_bmna1		= cad_td_b1_bmna7_ch / cad_tc_emps_bmna1;
+DO	cad_prod_bmna7		= cad_td_b1_bmna7_ch / cad_tc_emps_bmna7;
+DO	cad_taux_marge_bmna	= 100 * (cad_td_b2_bmna3/cad_td_b1_bmna3);
+
+
+//**************************************************************************************************************************
+//**************************************************************************************************************************
+// 				TREND ET INDICATRICES
+//**************************************************************************************************************************
+//**************************************************************************************************************************
+
+
+DO cad_temps78   = RESHAPE(SEQ(100+NOB(cad_td_pib7_ch)),1978q1),
+   cad_D8587T1 = (IF (temps78 <> VALUES (temps78,1985q1)) THEN 0 ELSE 1) +
+                 (IF (temps78 <> VALUES (temps78,1986q1)) THEN 0 ELSE 1) +
+                 (IF (temps78 <> VALUES (temps78,1987q1)) THEN 0 ELSE 1) ;
+DO cad_trim = temps78-4*TRUNCATE((temps78-1)/4);
+DO cad_temps931 = RESHAPE(C.(EXPAND(0,60),SEQ(20+NOB(cad_td_pib7_ch))),1978q1);
+DO cad_ind_galland = (IF temps78 > VALUES (temps78,2004q4) THEN 1 ELSE 0) ;
+DO  cad_sup93q1 = (IF cad_temps78<VALUES(cad_temps78,1993q1) THEN 0 ELSE 1);
+
+/*Indicatrices trimestrielles pour les équations de SMB et de wage_drift*/
+DO cad_indic_t1=(MODULO(temps78,4)*MODULO(temps78+1,4)*MODULO(temps78+2,4))/6;
+DO cad_indic_t2=(MODULO(temps78,4)*MODULO(temps78+1,4)*MODULO(temps78+3,4))/6;
+DO cad_indic_t3=(MODULO(temps78,4)*MODULO(temps78+2,4)*MODULO(temps78+3,4))/6;
+
+
+DO cad_trim = temps78-4*TRUNCATE((temps78-1)/4);
+
+
+
+//**************************************************************************************************************************
+//**************************************************************************************************************************
+//			AJOUT DE SERIES EXTERIEURES AUX COMPTES TRIMESTRIELS
+//**************************************************************************************************************************
+//**************************************************************************************************************************
+
+//--------------------------------------------------------------------------------------------
+// STOCK DE CAPITAL 
+//--------------------------------------------------------------------------------------------
+
+&tbl2ts file "inputs/stockcapital.csv" ;
+//On a un capital BMNA qui est trimestrialisé à partir de l'investissement des ENF, car pas d'investissement par branche en compte trims
+	DO td_p51s_d7_ann		= COMPACT(td_p51s_d7,-1);
+	DO td_p51s_d7_ch_ann	= COMPACT(td_p51s_d7_ch,-1);
+	DO td_p51s_d3_ann		= COMPACT(td_p51s_d3,-1);
+	
+	DO cad_td_k_bmna7_ch	= ktrimch'f(	SUBRANGE(knet3,				1980A,2015A),
+											SUBRANGE(knet7,				1980A,2015A),
+											SUBRANGE(knet7_ch,			1980A,2015A),
+											SUBRANGE(fbcf7,				1980A,2015A),
+											SUBRANGE(td_p51s_d7_ann,	1980A,2015A),
+											cad_td_p51s_d7_ch,
+											"7_ch") ;   // date à actualiser en fonction des series de capital disponibles
+	DO cad_td_k_bmna7		= ktrimch'f(	SUBRANGE(knet3,				1980A,2015A),
+											SUBRANGE(knet7,				1980A,2015A),
+											SUBRANGE(knet7_ch,			1980A,2015A),
+											SUBRANGE(fbcf7,				1980A,2015A),
+											SUBRANGE(td_p51s_d7_ann,	1980A,2015A),
+											cad_td_p51s_d7_ch,
+											"7") ;   // date à actualiser en fonction des series de capital disponibles
+
+	DO cad_facteur	= VALUES(fbcf7/td_p51s_d7_ann,2015A); //facteur d'ajustement pour corriger l'écart entre les deux séries
+	DO cad_knet3	= knet3;
+		// Calcul du taux de dépréciation apparent
+	DO tdecapp			= 1-(knet7-fbcf7)/knet3(-1);
+	
+	DO cad_td_k_bmna7_ch = extrapacch'f(cad_td_k_bmna7_ch,
+										cad_td_k_bmna7,
+										knet3,
+										tdecapp,
+										cad_td_p51s_d7,
+										facteur,
+										2015q4,2016q4);   // date à actualiser en fonction des series de capital disponibles
+	DO cad_coeftdec 		= 100*( 1-(td_k_bmna7_ch - td_p51s_d7_ch/1000) / td_k_bmna7_ch(-1));
+
+//--------------------------------------------------------------------------------------------
+//	COMMERCE EXTERIEUR - ENVIRONNEMENT INTERNATIONAL 
+//--------------------------------------------------------------------------------------------
+
+// variables de demande mondiale, commerce mondial, et prix de référence étrangers
+// issues de la base baseHypo.frm
+
+	ACCESS baseHypo type formdata id inputs/baseHypo.frm mode r ; SEARCH baseHypo ; 
+	DO PRT.(DFLIST("baseHypo",">"));
+	DO DFCOPY'F("baseHypo","cad") ;
+	DO cad_petfx = cad_petfx2 ;
+	DO cad_petfm = cad_petfm2 ;
+	DO cad_csufx = cad_csufx2 ;
+	
+	
+	//DO cad_baril_us = baseHypo_P_PPETROLE;
+	DELACCESS baseHypo;
+
+//--------------------------------------------------------------------------------------------
+// TUC ET CHOMAGE BIT fin de trimestre donné par INSEE
+//--------------------------------------------------------------------------------------------
+
+
+// Cette base Troll est constituée à partir de données Insee de chômage et de taux d'utilisation des capacités
+ACCESS chomtuc type formdata id inputs/chomtuc.frm mode r;   SEARCH chomtuc ;
+   DO PRT.(DFLIST("chomtuc",">"));
+   DO cad_tuc = chomtuc_tuc ;
+   DO cad_tcho = chomtuc_tcho;
+   DELACCESS chomtuc ;
+DO PRT.(tcho);
+
+// recalcul de l'emploi total par branche, offre de travail et nombre de chômeurs reconstitués comptablement
+   DO cad_tc_emp_d1 = cad_tc_emps_d1 + cad_tc_empns_d1 ;
+   DO cad_tc_ls_d1  = cad_tc_emp_d1 /(1-cad_tcho/100) ;
+   DO cad_tc_cho_d1 = cad_tcho * cad_tc_ls_d1 / 100 ;
+
+//--------------------------------------------------------------------------------------------
+// PRIX A LA CONSOMMATION
+//--------------------------------------------------------------------------------------------
+
+// IPC SOUS JACENT
+// Bien vérifier : les séparateurs du fichier .csv
+// les noms de variables qui doivent être en majuscule
+&tbl2ts file "inputs/ipcsj.csv" ;     
+   DO cad_ipc = ipc ;
+   DO cad_ipcsj = ipcsj ;
+   DO cad_coefpoidsipcsj = coefpoidsipcsj ;
+   DO cad_coefpoidsipcvol = coefpoidsipcvol ;
+   DO cad_ipcvol =((cad_coefpoidsipcvol+cad_coefpoidsipcsj)*cad_ipc-cad_coefpoidsipcsj*cad_ipcsj)/cad_coefpoidsipcvol;
+   DO cad_ticpe_par_baril	= ticpe_par_baril;
+   DO cad_IPC_brut_Insee	= IPC_brut_Insee;
+   DO cad_IPCSJ_insee	= IPCSJ_insee;
+   
+
+//--------------------------------------------------------------------------------------------
+//			AUTRES INPUTS
+//--------------------------------------------------------------------------------------------
+
+
+// SPHERE FINANCIERE et autres
+&tbl2ts file "inputs/autresinputs.csv" ;
+	DO 	cad_CICE_D39        = CICE_D39  ,
+		cad_txent           = txent ,
+		cad_spd_ent         = spd_ent  ,
+		cad_pimmop         	= pimmop ,
+		cad_pimmo          	= pimmo ,
+		cad_immat          	= immat ,
+		cad_smb			 	= smb ,
+		cad_emploi_estel	= emploi_estel ,
+		cad_pe				= pe ,
+		cad_part_emergents_cpb = part_emergents_cpb,
+	   	cad_balpos			= balpos,
+	   	cad_balneg			= balneg,
+	   	cad_juppos			= juppos,
+	   	cad_jupneg			= jupneg,
+	   	cad_filneg			= filneg,
+	   	cad_dummy2009q1plus = dummy2009q1plus,
+	   	cad_dummy2011q1		= dummy2011q1,
+	   	cad_indic1999q3		= indic1999q3,
+	   	cad_ouv_OCDE		= ouv_OCDE,
+	   	cad_TEMPVS1			= TEMPVS1,
+	   	cad_dummy1998q1plus	= dummy1998q1plus,
+	   	cad_indiccrise		= indiccrise,
+	   	cad_trendavant1998	= trendavant1998,
+	   	cad_tendP1mi		= tendP1mi,
+	   	cad_Trend1990Q2		= Trend1990Q2,
+	   	cad_Trend2001Q1		= Trend2001Q1,
+	   	cad_Trend2011Q3		= Trend2011Q3,
+	   	cad_Rupt2008Q4		= Rupt2008Q4,	   	
+	   	cad_tendp2bmna5		= tendp2bmna5,
+	   	cad_Trend2000Q4		= Trend2000Q4	   	
+	   	
+   	;
+
+//--------------------------------------------------------------------------------------------
+// CONSTRUCTION DE DIVERSES VARIABLES 
+//--------------------------------------------------------------------------------------------
+
+// Performances à l'export
+DO cad_perf_exp 			= cad_td_p6_db7_ch / cad_demmon;
+
+// Taux de pénétration des imports
+DO cad_taux_pen_imp_d7_ch 	= cad_td_p7_d7_ch / cad_td_rnt_d7_ch;
+DO cad_taux_pen_imp_d3 		= cad_td_p7_d3 / cad_td_rnt_d3;
+
+
+// Compétitivité
+DO cad_compit		= cad_td_p7_dhde5_ch/cad_td_p1mi_bmna5_ch;
+DO cad_compitserv	= cad_td_p7_serv5_ch/cad_td_p1mi_bmnahj5_ch ;
+DO cad_compet		= cad_petfx/cad_td_p6_d5_ch ;
+DO cad_csu_D1_CICE_pib		= (cad_tc_d1_d3 + cad_CICE_D39)/ cad_td_pib7_ch;
+DO cad_compet_cout	= cad_csufx/cad_csu_D1_CICE_pib ; 
+
+// Coût réel du capital
+DO cad_cout_reel = td_p51s_dhfz5_ch/TD_B1_BMNA5_CH*(txent-100*(td_p51s_dhfz5_ch/td_p51s_dhfz5_ch(-4)-1)+9);
+
+
+//--------------------------------------------------------------------------------------------
+// COEFFICIENTS TECHNIQUES
+//--------------------------------------------------------------------------------------------
+
+// Ces coeff techniques permettent de prévoir des petits postes en calant leur évolution sur celle d'un gros poste
+
+// P3 - Consommation finale
+		// Prix de la consommation publique
+DO  cad_coefp3gd5_ch 	= cad_td_p3g_d5_ch	/	cad_ipcsj ;
+		// Dépense de consommation des ISBLSM calée sur la dépense de consommation des APU
+DO  cad_coefp3pd5_ch = cad_td_p3p_d5_ch/cad_td_p3g_d5_ch ;
+DO  cad_coefp3pd7_ch = cad_td_p3p_d7_ch/cad_td_p3g_d7_ch ;
+
+// P51 - FBCF
+		//Prix de FBCF des ENF en construction calé sur le prix d'investissement hors construction
+DO  cad_coefp51sfz5_ch = cad_td_p51s_fz5_ch/cad_td_p51s_dhfz5_ch ;
+		// FBCF du secteur financier calée sur l'investissement total
+DO  cad_coefp51bd7_ch = cad_td_p51b_d7_ch/cad_td_p51_d7_ch ;
+DO  cad_coefp51bd5_ch = cad_td_p51b_d5_ch/cad_td_p51_d5_ch ;
+		// Prix de la FBCF publique
+DO  cad_coefp51gd5_ch 	= cad_td_p51g_d5_ch	/	cad_td_p1mi_bmnahj5_ch ;
+		// Prix de FBCF des ménages calé sur le prix de la dépense de consommation des ménages
+DO  cad_coefp51m5_ch = cad_td_p51m_d5_ch/cad_td_p3m_d5_ch ;
+		// FBCF des ISBLSM calée sur la FBCF des APU
+DO  cad_coefp51pd5_ch = cad_td_p51p_d5_ch/cad_td_p51g_d5_ch ;
+DO  cad_coefp51pd7_ch = cad_td_p51p_d7_ch/cad_td_p51g_d7_ch ;
+
+
+// P6-P7 Commerce extérieur
+
+		// C2 - Volume d'exports de carburants raffinés 
+DO  cad_coefp6C27_ch = cad_td_p6_C27_ch/cad_td_p6_dim7_ch ;
+DO  cad_coefp7C27_ch = cad_td_p7_C27_ch/cad_td_p7_dim7_ch ;
+		// DE - Prix d'exports d'énergie 
+DO  cad_coefp6de5_ch = cad_td_p6_de5_ch/cad_td_p3m_d5_ch ;
+ 		// PCHTR - Correction territoriale
+DO  cad_coefp6pchtr5_ch = cad_td_p6_pchtr5_ch/cad_td_p3m_d5_ch ;
+DO  cad_coefp6pchtr7_ch = cad_td_p6_pchtr7_ch/cad_td_p6_d7_ch ;
+
+DO  cad_coefp7pchtr5_ch = cad_td_p7_pchtr5_ch/cad_td_p3m_d5_ch ;
+DO  cad_coefp7pchtr7_ch = cad_td_p7_pchtr7_ch/cad_td_p7_d7_ch ;
+
+		//  Serv - Prix d'imports et exports de services
+DO  cad_coefp6serv5_ch = cad_td_p6_serv5_ch / td_p1mi_bmnahj5_ch;
+DO  cad_coefp7serv5_ch = cad_td_p7_serv5_ch / td_p1mi_bmnahj5_ch;
+
+
+		// Valeur du passage PIB-VA
+DO  cad_coefd231d3 = cad_td_d231_d3/cad_td_pib3 ;
+DO  cad_coefb1d7_ch = cad_td_b1_d7_ch/cad_td_pib7_ch ;
+
+// B1 - Valeur ajoutée
+DO cad_coeffmemp7_ch = cad_td_memp_bmna7_ch/cad_td_b1_d7_ch ;
+	// Valeur ajoutée des branches agricoles
+DO cad_coefb1az7_ch = cad_td_b1_az7_ch/cad_td_b1_d7_ch ;
+DO cad_coefb1az5_ch = cad_td_b1_az5_ch/cad_td_b1_d5_ch ;
+	// Valeur ajoutée des branches non marchandes
+DO  cad_tc_d11_oq1_IPC	= cad_tc_d11_oq3/cad_ipc ;
+DO  cad_coefb1oq7_ch	= cad_td_b1_oq7_ch/cad_tc_d11_oq1_IPC ;
+DO  cad_coefb1oq5_ch	= cad_td_b1_oq5_ch/cad_td_p3g_d5_ch ;
+
+// P2 - Consommations intermédiaires des branches
+DO  cad_coefp2bmna7_ch	= cad_td_p2e_bmna7_ch/cad_td_b1_bmna7_ch ;
+DO  cad_coefp2d5_ch		= cad_td_p2e_bmna5_ch/cad_td_p2e_d5_ch ;
+	// CI des  branches agricoles
+DO  cad_coefp2az7_ch	= cad_td_p2e_az7_ch/cad_td_b1_d7_ch ;
+DO  cad_coefp2az5_ch	= cad_td_p2e_az5_ch/cad_td_p2e_d5_ch ;
+	// CI des  branches non marchandes
+DO  cad_coefp2eoq7_ch	 = cad_td_p2e_oq7_ch/cad_td_p3g_d7_ch ;
+DO  cad_coefp2eoq5_ch	 = cad_td_p2e_oq5_ch/cad_td_p3g_d5_ch ;
+
+
+
+// D1 - Rémunérations
+
+DO  cad_coefd11az3 	 	= (cad_tc_d11_az3 / cad_td_b1_az3);
+
+DO  cad_coefd12az3		= cad_tc_d12_az3/cad_tc_d11_az3 ; // tx cotis employeur
+DO  cad_coefd12bmna3	= cad_tc_d12_bmna3/cad_tc_d11_bmna3 ; // tx cotis employeur
+DO  cad_coefd12oq3		= cad_tc_d12_oq3/cad_tc_d11_oq3 ; // tx cotis employeur
+
+DO  cad_coefd11b2s14r3  = (cad_td_d11b2_s14r3 / cad_tc_d11_bmna3);
+DO  cad_coefd61s14e3    = (cad_tc_d61_s14e3 / cad_tc_d11_bmna3);
+DO  cad_coefb6fins143   = (cad_tc_b6fin_s143 / cad_td_pib3);
+
+DO cad_wd				= smpt_bmna/smb;
+DO cad_SMPT_BMNA1_IPC	= cad_smpt_bmna/cad_ipc ;
+
+// Autres
+DO  cad_coefempsd1		= cad_tc_emps_d1 / cad_tc_emps_bmna1;
+DO  cad_coeftempart		= cad_tc_emps_bmna7/cad_tc_emps_bmna1 ;
+DO  cad_coefprodk		= cad_tuc/(cad_td_b1_bmna7_ch/cad_td_k_bmna7_ch) ;
+
+// La base don1ch.frm a été créée
+//EOF
+

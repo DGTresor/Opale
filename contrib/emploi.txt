@@ -1,0 +1,106 @@
+// Ce code source est régi par la licence CeCILL V2.1 soumise au droit français et 
+//respectant les principes de diffusion des logiciels libres. Il est autorisé de modifier 
+//et/ou redistribuer ce code sous les conditions de la licence CeCILL V2.1. Le texte complet
+// de la licence CeCILL V2.1 est dans le fichier `LICENSE`.
+
+// ************************************
+// ****		 EMPLOI		           ****
+// ************************************
+
+
+DELACCESS all; DELSAVE ; DRANGE;
+ACCESS outils id ./outils;   SEARCH outils;
+ACCESS cad type formdata id ./don3ch.frm mode r ; SEARCH cad ;
+
+USEMOD;
+ADDSYM	endogenous	tc_emps_bmna1 	emploi_estel		emploi_estel_corr prod_bmna1,
+		exogenous	emps_bmna1_cale	emploi_estel_cale;
+ADDEQ bottom,
+tc_emps_bmna1		: LOG(tc_emps_bmna1)= LOG((emploi_estel+emploi_estel(-1))/2) + emps_bmna1_cale ,
+prod_bmna1			: prod_bmna1		= td_b1_bmna7_ch / tc_emps_bmna1,
+emploi_estel_corr	: emploi_estel_corr = emploi_estel*tc_emps_bmna7/tc_emps_bmna1 - pe,
+
+// ici, les coefs des ruptures sont estimés et non fixés en dur :
+emploi_estel		: DEL(LOG(emploi_estel_corr)) =	empcst'c
+									+ empb1vol0'c		* DEL(LOG(td_b1_bmna7_ch))
+									+ empar1'c			* (DEL(LOG(emploi_estel_corr))(-1) - DEL(emploi_estel_cale)(-1))
+									+ empar2'c			* (DEL(LOG(emploi_estel_corr))(-2) - DEL(emploi_estel_cale)(-2))
+									+ muemp'c			* (
+											LOG(emploi_estel_corr)(-1) - emploi_estel_cale(-1)
+											- LOG(td_b1_bmna7_ch)(-1)
+											+ 0.0004 * Trend2011Q3(-1)
+											)
+									+ muemptrend1'c		* temps78(-1) 
+									+ muemptrend2'c		* Trend1990Q2(-1)	
+									+ muemptrend3'c		* Trend2000Q4(-1)
+									+ muemprupt'c		* Rupt2008Q4(-1)		
+									+ DEL(emploi_estel_cale) ;	
+
+FILEMOD estimeq ;
+
+DOSAVE	emploi_estel_corr	= emploi_estel*tc_emps_bmna7/tc_emps_bmna1 - pe,
+		emps_bmna1_cale		= 0 * td_pib7_ch,
+		emploi_estel_cale	= 0 * td_pib7_ch;
+USEMOD  estimeq; BOUNDS 1985q1 TO 2013q4 ; OLSMOD emploi_estel ; 
+
+SAVECOEF coefinv; SEARCH save_coefinv; 
+
+&simcalenulle 1982q1 2016q4 estimeq emploi_estel_cale emploi_estel_corr o o ;  //***  modifier date de fin quand nécessaire
+&calculcale   1982q1 2016q4 estimeq emploi_estel_cale emploi_estel_corr o ;  //***  modifier date de fin quand nécessaire
+
+
+
+
+// *************************** calcul contribution ***************************
+// *** en trimestriel ***
+DOSAVE	mainf_emploi_b1_bmna7			= mainf'f   (C.(1+ muemp +empar1,-empar1+empar2,-empar2),	C.(empb1vol0,-empb1vol0-muemp)),
+		mainf_emploi_temps78			= mainf'f   (C.(1+ muemp +empar1,-empar1+empar2,-empar2),	C.(0,-muemp*(- 0.0007862/0.1192))),
+		mainf_emploi_Trend1990Q2		= mainf'f   (C.(1+ muemp +empar1,-empar1+empar2,-empar2),	C.(0,-muemp*(+ 0.0002545 /0.1192))),
+		mainf_emploi_Trend2001Q1		= mainf'f   (C.(1+ muemp +empar1,-empar1+empar2,-empar2),	C.(0,-muemp*(+ 0.00009086 /0.1192))),
+		mainf_emploi_Rupt2008Q4			= mainf'f   (C.(1+ muemp +empar1,-empar1+empar2,-empar2),	C.(0,-muemp*(+ 0.001798 /0.1192))),
+		mainf_emploi_Trend2011Q3		= mainf'f   (C.(1+ muemp +empar1,-empar1+empar2,-empar2),	C.(0,-muemp*(+ 0.0004)));
+		
+
+DOSAVE	contrib_emploi_b1_bmna7			= contrib'f (DEL(LOG(td_b1_bmna7_ch)), 		mainf_emploi_b1_bmna7),
+		contrib_emploi_temps78			= contrib'f (DEL(temps78), 					mainf_emploi_temps78),
+		contrib_emploi_Trend1990Q2		= contrib'f (DEL(Trend1990Q2), 				mainf_emploi_Trend1990Q2),
+		contrib_emploi_Trend2001Q1		= contrib'f (DEL(Trend2001Q1), 				mainf_emploi_Trend2001Q1),
+		contrib_emploi_Rupt2008Q4		= contrib'f (DEL(Rupt2008Q4), 				mainf_emploi_Rupt2008Q4),
+		contrib_emploi_Trend2011Q3		= contrib'f (DEL(Trend2011Q3), 				mainf_emploi_Trend2011Q3),
+		contrib_emploi_trend			= contrib_emploi_temps78 + contrib_emploi_Trend1990Q2 + contrib_emploi_Trend2001Q1 + contrib_emploi_Rupt2008Q4 + contrib_emploi_Trend2011Q3,
+		contrib_emploi_cale 			= DEL(emploi_estel_cale),
+		dlog_simul						= DEL(LOG(simul)),
+		dlog_obs						= DEL(LOG(obs));
+
+// Vérifications
+DOSAVE  contrib_verif_simul 	= dlog_simul - contrib_emploi_b1_bmna7 - contrib_emploi_trend,
+ 		contrib_verif_obs = dlog_obs-dlog_simul-contrib_emploi_cale;
+DO	PRT.(contrib_verif_simul),
+	PRT.(contrib_verif_obs);
+
+
+// *** en annuel ***
+DOSAVE	contrib_emploi_b1_bmna7_ann				= 100*calcul'f(contrib_emploi_b1_bmna7),
+		contrib_emploi_trend_ann				= 100*calcul'f(contrib_emploi_trend),
+      	contrib_emploi_cale_ann 				= 100*calcul'f(contrib_emploi_cale), 
+      	dlog_simul_ann 							= 100*calcul'f(dlog_simul),          
+     	dlog_obs_ann 							= 100*calcul'f(dlog_obs);
+
+// Vérifications
+DOSAVE contrib_verif_simul_ann		= dlog_simul_ann - contrib_emploi_b1_bmna7_ann - contrib_emploi_trend_ann,
+       contrib_verif_obs_ann		= dlog_obs_ann - dlog_simul_ann - contrib_emploi_cale_ann;  
+DO	PRT.(contrib_verif_simul_ann),
+	PRT.(contrib_verif_obs_ann);
+
+
+
+//********************************************************************************************************   
+// Sorties : contributions annuelles et trimestrielles, séries simulées et observées
+//******************************************************************************************************** 
+
+DRANGE 1992a TO 2016a;
+&ts2tbl file "contrib/emploictribann.csv" vari dlog_obs_ann dlog_simul_ann contrib_emploi_b1_bmna7_ann contrib_emploi_trend_ann contrib_emploi_cale_ann;
+
+DRANGE 1992q1 TO 2016q4;
+&ts2tbl file "contrib/emploictribtrim.csv" vari dlog_obs dlog_simul contrib_emploi_b1_bmna7 contrib_emploi_trend contrib_emploi_cale ;
+

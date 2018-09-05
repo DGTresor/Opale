@@ -1,0 +1,115 @@
+// Ce code source est régi par la licence CeCILL V2.1 soumise au droit français et 
+//respectant les principes de diffusion des logiciels libres. Il est autorisé de modifier 
+//et/ou redistribuer ce code sous les conditions de la licence CeCILL V2.1. Le texte complet
+// de la licence CeCILL V2.1 est dans le fichier `LICENSE`.
+
+// **************************************************
+// *********** Consommation des ménages  P3MD7CH ****
+// **************************************************
+
+DELACCESS all; DELSAVE all; DRANGE;
+ACCESS outils id  outils;  SEARCH outils;
+ACCESS cad type formdata id ./don3ch.frm mode r ; SEARCH cad ;
+
+
+USEMOD;
+ADDSYM endogenous td_p3m_d7_ch , exogenous p3m_d7_ch_cale, 'c ;
+ADDEQ bottom,
+1 : DEL(1: LOG(td_p3m_d7_ch)) = p3md7cst'c
+			                    + p3md7balpos'c		*	balpos
+			                    + p3md7balneg'c		*	balneg
+			                    + p3md7juppos'c		*	juppos
+			                    + p3md7jupneg'c		*	jupneg
+			                    + p3md7filneg'c		*	filneg
+			                    + p3md7indic1999q3'c*	indic1999q3
+			                    + p3md7rdbr0'c		*	DEL(LOG(TD_B6_S143/TD_P3M_D5_CH))
+			                    + p3md7rdbr1'c		*	DEL(LOG(TD_B6_S143/TD_P3M_D5_CH))(-1)
+								+ p3md7tcho0'c		*	DEL(TCHO)							
+								+ p3md7vs0'c		*	DEL(TEMPVS1)
+								+ mup3md7'c			*	(
+									LOG(td_p3m_d7_ch(-1)) -	p3m_d7_ch_cale(-1)
+									- 4.438492
+									- 1 * LOG(TD_B6_S143(-1)/TD_P3M_D5_CH(-1))
+													)
+								+ DEL(p3m_d7_ch_cale) ;
+								
+FILEMOD estimeq ; DOSAVE p3m_d7_ch_cale = 0 * td_pib7_ch ;
+USEMOD estimeq; BOUNDS 1990q1 TO 2012q4 ; OLSMOD 1 ; 
+SAVECOEF coefinv; SEARCH save_coefinv; 
+
+&simcalenulle 1990q1 2016q4 estimeq p3m_d7_ch_cale td_p3m_d7_ch o o ;  //***  modifier date de fin si nécessaire
+&calculcale   1990q1 2016q4 estimeq p3m_d7_ch_cale td_p3m_d7_ch o ;  //***  modifier date de fin si nécessaire
+
+
+
+// *************************** CALCUL DES CONTRIBUTIONS***************************
+
+// *** en trimestriel ***
+DOSAVE 	mainf_p3md7_rdb				= mainf'f   (C.(1+ mup3md7),C.(p3md7rdbr0,-p3md7rdbr0+p3md7rdbr1-mup3md7,-p3md7rdbr1)),
+		mainf_p3md7_tcho			= mainf'f   (C.(1+ mup3md7),C.(p3md7tcho0,-p3md7tcho0)),
+		mainf_p3md7_temp 			= mainf'f   (C.(1+ mup3md7),C.(p3md7vs0,-p3md7vs0)),
+		mainf_p3md7_balpos 			= mainf'f   (C.(1+ mup3md7),C.(p3md7balpos)),
+		mainf_p3md7_balneg 			= mainf'f   (C.(1+ mup3md7),C.(p3md7balneg)),
+		mainf_p3md7_juppos			= mainf'f   (C.(1+ mup3md7),C.(p3md7juppos)),
+		mainf_p3md7_jupneg 			= mainf'f   (C.(1+ mup3md7),C.(p3md7jupneg)),
+		mainf_p3md7_filneg			= mainf'f   (C.(1+ mup3md7),C.(p3md7filneg)),
+		mainf_p3md7_indic1999q3		= mainf'f   (C.(1+ mup3md7),C.(p3md7indic1999q3));
+
+DOSAVE  contrib_p3md7_rdb 			= contrib'f (DEL(LOG(100*TD_B6_S143/TD_P3M_D5_CH)), mainf_p3md7_rdb),
+		contrib_p3md7_tcho			= contrib'f (DEL(tcho), 							mainf_p3md7_tcho) ,
+		contrib_p3md7_temp			= contrib'f (DEL(tempvs1),							mainf_p3md7_temp) ,
+		
+		contrib_p3md7_balpos		= contrib'f (DEL(balpos), 							mainf_p3md7_balpos) ,
+		contrib_p3md7_balneg 		= contrib'f (DEL(balneg), 							mainf_p3md7_balneg) ,
+		contrib_p3md7_juppos		= contrib'f (DEL(juppos), 							mainf_p3md7_juppos) ,
+		contrib_p3md7_jupneg 		= contrib'f (DEL(jupneg), 							mainf_p3md7_jupneg) ,
+		contrib_p3md7_filneg 		= contrib'f (DEL(filneg), 							mainf_p3md7_filneg) ,
+		contrib_p3md7_indic1999q3	= contrib'f (DEL(indic1999q3), 						mainf_p3md7_indic1999q3) ,
+		contrib_p3md7_indicauto		= contrib_p3md7_balpos + contrib_p3md7_balneg + contrib_p3md7_juppos + contrib_p3md7_jupneg + contrib_p3md7_filneg + contrib_p3md7_indic1999q3,
+		
+		contrib_p3md7_cale 			= DEL(p3m_d7_ch_cale),
+		dlog_simul					= DEL(LOG(simul)),
+		dlog_obs					= DEL(LOG(obs));
+
+// Vérifications
+DOSAVE	ctrib_verif_simul	= dlog_simul - contrib_p3md7_rdb - contrib_p3md7_tcho - contrib_p3md7_temp - contrib_p3md7_indicauto,
+		ctrib_verif_obs 	= dlog_obs-dlog_simul-contrib_p3md7_cale;
+
+DO	PRT.(ctrib_verif_simul), // La croissance simulée  est égale à la somme des contributions, hors contrib de cale
+	PRT.(ctrib_verif_obs);   // La croissance observée est égale à la croissance simulée plus la contrib de cale
+
+
+// *** en annuel ***
+
+DOSAVE 	contrib_p3md7_rdb_ann 		= 100*calcul'f(contrib_p3md7_rdb),
+		contrib_p3md7_tcho_ann 		= 100*calcul'f(contrib_p3md7_tcho),
+		contrib_p3md7_temp_ann 		= 100*calcul'f(contrib_p3md7_temp),
+		contrib_p3md7_indicauto_ann	= 100*calcul'f(contrib_p3md7_indicauto),
+		contrib_p3md7_cale_ann 		= 100*calcul'f(contrib_p3md7_cale), 
+		dlog_simul_ann 				= 100*calcul'f(dlog_simul),          
+		dlog_obs_ann 				= 100*calcul'f(dlog_obs);
+
+// Vérifications
+DOSAVE ctrib_verif_simul_ann	= dlog_simul_ann - contrib_p3md7_rdb_ann -  contrib_p3md7_tcho_ann - contrib_p3md7_temp_ann - contrib_p3md7_indicauto_ann,
+       ctrib_verif_obs_ann		= dlog_obs_ann - dlog_simul_ann - contrib_p3md7_cale_ann;  
+DO	PRT.(ctrib_verif_simul_ann),
+	PRT.(ctrib_verif_obs_ann);
+
+
+
+//********************************************************************************************************   
+// Sorties : contributions annuelles et trimestrielles, séries simulées et observées
+//******************************************************************************************************** 
+
+
+DRANGE 1992a TO 2016a;
+&ts2tbl file "contrib/p3md7ctribann.csv" vari contrib_p3md7_rdb_ann contrib_p3md7_indicauto_ann contrib_p3md7_tcho_ann contrib_p3md7_temp_ann contrib_p3md7_cale_ann dlog_obs_ann dlog_simul_ann    ;
+
+
+DRANGE 1992q1 TO 2016q4;
+&ts2tbl file "contrib/p3md7ctribtrim.csv" vari contrib_p3md7_rdb contrib_p3md7_indicauto contrib_p3md7_tcho contrib_p3md7_temp contrib_p3md7_cale dlog_obs dlog_simul     ;
+
+
+DRANGE;
+
+// EOF

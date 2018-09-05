@@ -1,0 +1,37 @@
+// Ce code source est régi par la licence CeCILL V2.1 soumise au droit français et 
+//respectant les principes de diffusion des logiciels libres. Il est autorisé de modifier 
+//et/ou redistribuer ce code sous les conditions de la licence CeCILL V2.1. Le texte complet
+// de la licence CeCILL V2.1 est dans le fichier `LICENSE`.
+
+// Fonction qui extrapole une série x entre la date date1 et la date date2
+// à partir de deux séries y et z selon l'équation de récurrence suivante
+// 
+//	x(t)=x(t-1)*y(t)+z(t)
+//
+// en entrée : serie x, serie y, serie z
+//             date1, date2
+
+
+addfun main;
+
+PROCEDURE main(x,x_volvo,x_valeur,y,z,z_volvo,date1,date2)
+  {
+ t1=date1;
+ t2=date2;
+ serie_volvo=SUBRANGE (x_volvo,STARTDATE(x_volvo), t1);
+ serie_valeur=SUBRANGE (x_valeur,STARTDATE(x_valeur), t1);
+ serie=SUBRANGE (x,STARTDATE(x), t1);
+  for (i=t1+1;i<=t2-1;i=i+1)
+     {
+     z_volvo=z_volvo[i-1]*z[i]/z[i-1];// Hypothèse pas d'évol du prix du capital. pour être cohérent, on suppose la même chose pour l'investissement. Donc évol en volvo = évol en vch
+     output7=serie_valeur[i-1]*y[i]+z_volvo[i];//Accumulation en volvo
+     output3=output7[i];//On suppose que le prix du capital est constant - Inoffensif a priori
+     serie_volvo=( C.(serie_volvo,output7) );
+     serie_valeur=( C.(serie_valeur,output3) );
+     output0 = pxbasevolvoann'f(serie_volvo,serie_valeur);//Calcul du prix chaîné de l'année précédente
+     serie = serie_valeur / output0; //Série en prix chaîné
+     
+     }
+  RETURN(serie);
+  } 
+     

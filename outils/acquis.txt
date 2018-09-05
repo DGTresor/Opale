@@ -1,0 +1,96 @@
+// Ce code source est régi par la licence CeCILL V2.1 soumise au droit français et 
+//respectant les principes de diffusion des logiciels libres. Il est autorisé de modifier 
+//et/ou redistribuer ce code sous les conditions de la licence CeCILL V2.1. Le texte complet
+// de la licence CeCILL V2.1 est dans le fichier `LICENSE`.
+
+ /**************************************************************************************/
+ /*  Sert au calcul des acquis                                                         */
+ /*                                                                                    */
+ /**************************************************************************************/
+ 
+
+
+
+addfun main  ;
+procedure main()
+begin;
+
+        nmpgm = "ACQUIS" ; 
+
+DATEACQUIS :
+	get from term date dateacq "ACQUIS A L'ISSUE DE " ;
+ANNEE : 	
+	get from term  number annee  "ACQUIS POUR L'ANNEE ";           
+        if (annee < 1000) then
+        begin;
+          	print ("année erronée !");
+		clear() ;
+          	goto abnd ;
+        end;
+
+	annee=pyf2date(1,annee,1);
+
+        putopt ("OUTOPT","RMARG",300);  
+        putopt ("OUTOPT","NUMWIDTH",8);
+        PUTOPT ("OUTOPT","DECIMALS",-3);
+ 
+>>ACCESS outils id ./../outils ;
+>>SEARCH outils ;
+
+	i=1;
+	get up 1 item in "NOM DE SERIE ";
+	while (in <> ";")
+	begin;
+
+        	on error 
+                begin;
+
+		 /* TRAITEMENT DU CAS OU UNE SERIE EST ABSENTE */ 
+                	if ( lasterr () == 2222 ) then goto SUITE ;    
+		 /* TRAITEMENT DU CAS OU LA PERIODICITE DEMANDEE EST INCOMPATIBLE AVEC LA SERIE */ 
+		  	if ( lasterr () == 6000 ) then
+			begin;
+				print ("La série " , var , "n'a pas une périodicité multiple de " ,periodic );
+				goto SUITE;
+			end;		
+	        end;
+
+                var =  in ;  
+		>> do x=extrapsd'f(&var,1.00,0,&dateacq+1,&dateacq+9);
+  		>> do y=100*compact(x,-1,1)/compact(x,-1,1)(-1)-100;
+   		>> do prt.(values(y,&annee));
+   
+SUITE:
+		get up 1 item in;
+		i=i+1;
+	end;
+
+        >> outopt reset ;
+    
+        on error exit() ;
+        goto FIN ; 
+
+
+/* -------- En cas d'erreur       ---------------------------------------------------------- */
+
+ABND:
+     print(" =====> Program ",nmpgm," aborted. <=======");
+     return ( c.()) ;
+
+
+/* -------- FIN Normale --------------------------------------------------------------------- */
+
+FIN:
+/*     print(" =====> Ouf ",nmpgm," c'est terminé normalement. <=======");          */
+     return ( c.()) ;
+
+
+end;
+
+
+
+
+ 
+
+ 
+

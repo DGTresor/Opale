@@ -1,0 +1,98 @@
+// Ce code source est régi par la licence CeCILL V2.1 soumise au droit français et 
+//respectant les principes de diffusion des logiciels libres. Il est autorisé de modifier 
+//et/ou redistribuer ce code sous les conditions de la licence CeCILL V2.1. Le texte complet
+// de la licence CeCILL V2.1 est dans le fichier `LICENSE`.
+
+// ************************************************
+// **  Equation d'investissement des entreprises **
+// **             P51DHFZ7CH                     **
+// ************************************************
+
+
+DELACCESS all; DELSAVE ; DRANGE;
+ACCESS outils id ./outils;   SEARCH outils;
+ACCESS cad type formdata id ./don3ch.frm mode r ; SEARCH cad ;
+
+
+USEMOD;
+ADDSYM endogenous td_p51s_dhfz7_ch , exogenous p51s_dhfz7_ch_cale, 'c ;
+ADDEQ bottom,
+1 : DEL(LOG(td_p51s_dhfz7_ch)) = -0.002801
+					+ 0.257006			*	(DEL(LOG(td_p51s_dhfz7_ch(-2)))-DEL(p51s_dhfz7_ch_cale(-2)))
+                    - 0.592343			*	DEL(LOG(td_p51s_dhfz5_ch/TD_B1_BMNA5_CH))
+                    + 1.363988		    * 	DEL(LOG(td_b1_bmna7_ch))
+                    + 0.002681			*	DEL(TUC)
+					- 0.093789			*	(
+						LOG(td_p51s_dhfz7_ch(-1))- LOG(td_b1_bmna7_ch(-1)) -
+							(	-1.854938
+							    -0.018102 * COUT_REEL(-1)	)
+							- p51s_dhfz7_ch_cale(-1)	)
+					+ DEL(p51s_dhfz7_ch_cale) ;
+		
+FILEMOD estimeq ; DOSAVE p51s_dhfz7_ch_cale = 0 * td_pib7_ch ;
+
+
+&simcalenulle 1990q1 2016q4 estimeq p51s_dhfz7_ch_cale td_p51s_dhfz7_ch o o ;  //***  modifier date de fin si nécessaire
+&calculcale   1990q1 2016q4 estimeq p51s_dhfz7_ch_cale td_p51s_dhfz7_ch o ;  //***  modifier date de fin si nécessaire
+
+//&plot vari simul obs, RANGE 1990Q4 TO 2016q4 ;  //***  modifier année de fin 
+
+// *************************** calcul contribution ***************************
+
+// *** en trimestriel ***
+DOSAVE	mainf_b1		=mainf'f(C.(1-0.093789,0.257006,-0.257006),	C.(1.363988,	-1.363988+0.093789)),
+        mainf_prix		=mainf'f(C.(1-0.093789,0.257006,-0.257006),	C.(- 0.592343,	0.592343)),
+		mainf_cout_reel	=mainf'f(C.(1-0.093789,0.257006,-0.257006),	C.(0,			- 0.093789*0.018102)),
+        mainf_tuc		=mainf'f(C.(1-0.093789,0.257006,-0.257006),	C.(0.002681,	-0.002681)),
+        mainf_cst		=mainf'f(C.(1-0.093789,0.257006,-0.257006),	C.(-0.002801- 0.093789*1.854938));
+
+DOSAVE	contrib_p51sdhfz7_b1		= contrib'f(DEL(LOG(td_b1_bmna7_ch)),					mainf_b1),
+		contrib_p51sdhfz7_prix		= contrib'f(DEL(LOG(td_p51s_dhfz5_ch/TD_B1_BMNA5_CH)),	mainf_prix),
+		contrib_p51sdhfz7_cout_reel	= contrib'f(DEL(cout_reel),								mainf_cout_reel),
+		contrib_p51sdhfz7_tuc		= contrib'f(DEL(tuc),									mainf_tuc),
+		contrib_p51sdhfz7_cale		= DEL(p51s_dhfz7_ch_cale),
+		dlog_simul					= DEL(LOG(simul)),
+		dlog_obs					= DEL(LOG(obs));
+	   
+// vérification
+DOSAVE  ctrib_verif_simul	= dlog_simul - contrib_p51sdhfz7_b1 - contrib_p51sdhfz7_prix - contrib_p51sdhfz7_cout_reel - contrib_p51sdhfz7_tuc ,
+ 		ctrib_verif_obs		= dlog_obs-dlog_simul-contrib_p51sdhfz7_cale;
+DO	PRT.(ctrib_verif_simul),
+	PRT.(ctrib_verif_obs);
+  
+
+// *** en annuel ***
+DOSAVE	contrib_p51sdhfz7_b1_ann		= 100*calcul'f(contrib_p51sdhfz7_b1),
+      	contrib_p51sdhfz7_prix_ann		= 100*calcul'f(contrib_p51sdhfz7_prix),
+      	contrib_p51sdhfz7_cout_reel_ann	= 100*calcul'f(contrib_p51sdhfz7_cout_reel),
+      	contrib_p51sdhfz7_tuc_ann		= 100*calcul'f(contrib_p51sdhfz7_tuc),
+      	contrib_p51sdhfz7_cale_ann 		= 100*calcul'f(contrib_p51sdhfz7_cale), 
+      	dlog_simul_ann 					= 100*calcul'f(dlog_simul),          
+     	dlog_obs_ann	 				= 100*calcul'f(dlog_obs);
+
+DOSAVE ctrib_verif_simul_ann	= dlog_simul_ann - contrib_p51sdhfz7_b1_ann - contrib_p51sdhfz7_prix_ann - contrib_p51sdhfz7_cout_reel_ann - contrib_p51sdhfz7_tuc_ann  ,
+       ctrib_verif_obs_ann		= dlog_obs_ann - dlog_simul_ann - contrib_p51sdhfz7_cale_ann;  
+DO	PRT.(ctrib_verif_simul_ann),
+	PRT.(ctrib_verif_obs_ann);
+
+
+
+//********************************************************************************************************   
+// Sorties : contributions annuelles et trimestrielles, séries simulées et observées
+//******************************************************************************************************** 
+
+DO	croiss_td_p51s_d7_ch_ann		= 100*(COMPACT(td_p51s_d7_ch,-1,1)		/COMPACT(td_p51s_d7_ch,-1,1)(-1)-1),
+	contrib_td_p51s_dhfz7_ch_ann	= 100*(COMPACT(td_p51s_dhfz7_ch,-1,1)	/COMPACT(td_p51s_dhfz7_ch,-1,1)(-1)-1)	*COMPACT(td_p51s_dhfz3,-1,1)(-1)/COMPACT(td_p51s_d3,-1,1)(-1),
+	contrib_td_p51s_fz7_ch_ann		= 100*(COMPACT(td_p51s_fz7_ch,-1,1)		/COMPACT(td_p51s_fz7_ch,-1,1)(-1)-1)	*COMPACT(td_p51s_fz3,-1,1)(-1)	/COMPACT(td_p51s_d3,-1,1)(-1);
+
+DRANGE 1992a TO 2016a;
+&ts2tbl file "contrib/p51sdhfz7ctribann.csv" vari	DLOG_OBS_ANN	DLOG_SIMUL_ANN	CONTRIB_P51SDHFZ7_B1_ANN	CONTRIB_P51SDHFZ7_COUT_REEL_ANN	CONTRIB_P51SDHFZ7_TUC_ANN	CONTRIB_P51SDHFZ7_CALE_ANN	CROISS_TD_P51S_D7_CH_ANN	CONTRIB_TD_P51S_FZ7_CH_ANN	CONTRIB_TD_P51S_DHFZ7_CH_ANN;
+
+DO	cout_reel_100	= 100*(cout_reel)/VALUES(cout_reel,1995q1),
+	tuc_100			= 100*(tuc)/VALUES(tuc,1995q1);
+
+
+DRANGE 1992q1 TO 2016q4;
+&ts2tbl file "contrib/p51sdhfz7ctribtrim.csv" vari contrib_p51sdhfz7_b1 contrib_p51sdhfz7_prix contrib_p51sdhfz7_cout_reel contrib_p51sdhfz7_tuc contrib_p51sdhfz7_cale dlog_simul dlog_obs;
+	
+DRANGE;

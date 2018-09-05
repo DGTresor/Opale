@@ -1,0 +1,976 @@
+// Ce code source est régi par la licence CeCILL V2.1 soumise au droit français et 
+//respectant les principes de diffusion des logiciels libres. Il est autorisé de modifier 
+//et/ou redistribuer ce code sous les conditions de la licence CeCILL V2.1. Le texte complet
+// de la licence CeCILL V2.1 est dans le fichier `LICENSE`.
+
+// ***************************************************
+// ***** Modélisation du cadre comptable TES-TEE *****
+// ***************************************************
+// Objet du fichier : définition du modèle comptable
+//
+// NB : ce fichier reclacule toutes les données comptables
+// de manière à avoir un compte cohérent au M€ près
+// (dans les données des comptes trimestriels, la somme des composantes du PIB n'est pas égale au PIB 
+// car les valeurs sont arrondies au M€
+
+
+// Input : don1ch.frm créé dans macro1
+// Output : don2ch.frm et mod2.mod qui est la structure comptable du modèle
+
+// ************************************************************************************************
+// **************************************** CALAGE DU TES *****************************************
+// ************************************************************************************************
+DELACCESS all; DELSAVE all; DRANGE;
+
+USEMOD ; // Création d'un nouveau modèle
+
+//***************************************************************************************************************************************
+//                                              DEFINITIONS DES VARIABLES DU MODELE
+//***************************************************************************************************************************************
+
+
+ADDSYM exogenous
+// Les variables exogènes ne seront pas recalculées et resteront exactement celle des comptes trim
+
+
+//---------------------------------------------------------------------------------------------------------------------------------------
+// VARIABLES EXOGENES PURES DU TES
+
+td_pib3        td_pib7	 // on solde l'égalité du PIB sur p3p - conso des ISBLSM
+
+
+/* ---------- Approche offre ---------- */
+
+
+td_p1e_bmna3    td_p1e_bmna7     
+                                 
+td_p1e_bmnahj3  td_p1e_bmnahj7   
+                                 
+td_p2e_az3		td_p2e_az7       
+td_p2e_oq3		td_p2e_oq7       
+                                 
+td_b1_az3		td_b1_az7        
+td_b1_oq3     	td_b1_oq7        
+td_d231_d3      td_d231_d7       
+                                 
+
+/* ---------- Approche demande ---------- */
+
+td_p3m_d3      td_p3m_d7	
+td_p3g_d3      td_p3g_d7	
+// solde implicite du PIB sur la CF des ISBLSM
+
+td_p51s_dhfz3  td_p51s_dhfz7
+td_p51s_fz3    td_p51s_fz7
+td_p51b_d3     td_p51b_d7
+td_p51g_d3     td_p51g_d7
+td_p51m_d3     td_p51m_d7
+td_p51p_d3     td_p51p_d7
+
+td_p6_d3        td_p6_d7
+// solde implicite des exports totaux sur AZ
+td_p6_de3       td_p6_de7
+				td_p6_dim7
+td_p6_dimhc23		
+td_p6_c23		td_p6_c27
+td_p6_serv3     td_p6_serv7
+td_p6_pchtr3	td_p6_pchtr7
+
+td_p7_d3        td_p7_d7
+// solde implicite des imports totaux sur AZ
+			     td_p7_dim7    
+td_p7_dimhc23        
+td_p7_c23       td_p7_c27
+td_p7_de3       td_p7_de7
+td_p7_serv3     td_p7_serv7 
+td_p7_pchtr3	td_p7_pchtr7
+
+td_p523_d3      td_p523_d7
+
+;
+
+//---------------------------------------------------------------------------------------------------------------------------------------
+// VARIABLES ENDOGENES DU TES
+
+ADDSYM  endogenous
+
+
+
+/* PIB et autres agrégats */
+	td_pib0			/*td_pib3*/ 		td_pib5_ch			/*td_pib7*/ 		td_pib7_ch
+	  
+	td_pibhs0		td_pibhs3 			td_pibhs5_ch		td_pibhs7 			td_pibhs7_ch	
+	td_dint_d0 		td_dint_d3			td_dint_d5_ch		td_dint_d7			td_dint_d7_ch
+	td_dinths_d0	td_dinths_d3		td_dinths_d5_ch		td_dinths_d7		td_dinths_d7_ch	
+	td_dhs_d0		td_dhs_d3			td_dhs_d5_ch		td_dhs_d7			td_dhs_d7_ch
+	td_rnt_d0		td_rnt_d3			td_rnt_d5_ch		td_rnt_d7			td_rnt_d7_ch
+	
+	td_comext_d0    td_comext_d3		td_comext_d5_ch		td_comext_d7		td_comext_d7_ch
+	td_dempub0    	td_dempub3			td_dempub5_ch		td_dempub7			td_dempub7_ch
+	
+//	td_dfinpond_d0	td_dfinpond_d3		td_dfinpond_d5_ch	td_dfinpond_d7		td_dfinpond_d7_ch	
+
+
+/* ---------- Approche offre ---------- */
+
+/* P1 - Production */
+
+	td_p1e_d0	 	td_p1e_d3	    	td_p1e_d5_ch		td_p1e_d7			td_p1e_d7_ch	  
+	td_p1e_az0		td_p1e_az3			td_p1e_az5_ch		td_p1e_az7			td_p1e_az7_ch
+	td_p1e_bmna0	/*td_p1e_bmna3*/	td_p1e_bmna5_ch		/*td_p1e_bmna7*/	td_p1e_bmna7_ch	   
+	td_p1e_oq0		td_p1e_oq3		    td_p1e_oq5_ch		td_p1e_oq7			td_p1e_oq7_ch
+	/* Partage de la production BMNA marges commerciales / hors marges commerciales */
+	td_memp_bmna0	td_memp_bmna3		td_memp_bmna5_ch	td_memp_bmna7		td_memp_bmna7_ch 
+	td_p1e_bmnahj0	/*td_p1e_bmnahj3*/	td_p1e_bmnahj5_ch	/*td_p1e_bmnahj7*/	td_p1e_bmnahj7_ch 	
+	/* Marché intérieur */
+	td_p1mi_d0		td_p1mi_d3 			td_p1mi_d5_ch 		td_p1mi_d7			td_p1mi_d7_ch
+	td_p1mi_bmna0	td_p1mi_bmna3 		td_p1mi_bmna5_ch 	td_p1mi_bmna7		td_p1mi_bmna7_ch
+	td_p1mi_bmnahj0	td_p1mi_bmnahj3		td_p1mi_bmnahj5_ch	td_p1mi_bmnahj7		td_p1mi_bmnahj7_ch	
+
+/* P2 - Consommation intermédiaire */
+	td_p2e_d0		td_p2e_d3			td_p2e_d5_ch 		td_p2e_d7			td_p2e_d7_ch		
+	td_p2e_az0		/*td_p2e_az3*/		td_p2e_az5_ch		/*td_p2e_az7*/		td_p2e_az7_ch	
+	td_p2e_bmna0	td_p2e_bmna3		td_p2e_bmna5_ch		td_p2e_bmna7		td_p2e_bmna7_ch	
+	td_p2e_oq0		/*td_p2e_oq3*/		td_p2e_oq5_ch		/*td_p2e_oq7*/		td_p2e_oq7_ch	
+
+/* B1 - Valeur ajoutée des branches et D231 - Impôts nets des subventions sur produits */
+/* Passge PIB-VA */
+	td_b1_d0		td_b1_d3			td_b1_d5_ch			td_b1_d7			td_b1_d7_ch 	    	
+	td_b1_az0		/*td_b1_az3*/		td_b1_az5_ch		/*td_b1_az7*/	 	td_b1_az7_ch 
+	td_b1_bmna0		td_b1_bmna3			td_b1_bmna5_ch		td_b1_bmna7			td_b1_bmna7_ch    	 
+	td_b1_oq0		/*td_b1_oq3 */		td_b1_oq5_ch		/*td_b1_oq7	*/		td_b1_oq7_ch     
+	td_d231_d0		/*td_d231_d3 */		td_d231_d5_ch 		/*td_d231_d7*/		td_d231_d7_ch
+
+/* ---------- Approche demande ---------- */
+
+/* P3 - Consommation Finale */		
+	td_p3g_d0		/*td_p3g_d3*/		td_p3g_d5_ch		/*td_p3g_d7*/ 		td_p3g_d7_ch
+	td_p3m_d0		/*td_p3m_d3*/		td_p3m_d5_ch		/*td_p3m_d7*/		td_p3m_d7_ch		
+	td_p3p_d0		td_p3p_d3			td_p3p_d5_ch		td_p3p_d7			td_p3p_d7_ch	
+
+/* P5 - FBC et P51 - FBFC */
+	td_p5_d0		td_p5_d3			td_p5_d5_ch			td_p5_d7			td_p5_d7_ch	
+
+	td_p51_d0		td_p51_d3 			td_p51_d5_ch		td_p51_d7 			td_p51_d7_ch
+	td_p51s_d0		td_p51s_d3			td_p51s_d5_ch		td_p51s_d7			td_p51s_d7_ch	
+	td_p51s_dhfz0	/*td_p51s_dhfz3*/	td_p51s_dhfz5_ch	/*td_p51s_dhfz7*/	td_p51s_dhfz7_ch	
+	td_p51s_fz0		/*td_p51s_fz3*/		td_p51s_fz5_ch		/*td_p51s_fz7*/		td_p51s_fz7_ch	
+	td_p51b_d0		/*td_p51b_d3*/		td_p51b_d5_ch		/*td_p51b_d7*/		td_p51b_d7_ch			
+	td_p51g_d0		/*td_p51g_d3*/		td_p51g_d5_ch		/*td_p51g_d7*/		td_p51g_d7_ch
+	td_p51m_d0		/*td_p51m_d3*/		td_p51m_d5_ch		/*td_p51m_d7*/		td_p51m_d7_ch	
+	td_p51p_d0		/*td_p51p_d3*/		td_p51p_d5_ch		/*td_p51p_d7*/		td_p51p_d7_ch	
+
+
+/* P6 - Exports */
+	td_p6_d0		/*td_p6_d3*/		td_p6_d5_ch			/*td_p6_d7*/	    td_p6_d7_ch
+	td_p6_db0		td_p6_db3 			td_p6_db5_ch		td_p6_db7    		td_p6_db7_ch
+	td_p6_az0		td_p6_az3			td_p6_az5_ch		td_p6_az7	   		td_p6_az7_ch
+	td_p6_dim0		td_p6_dim3			td_p6_dim5_ch		/*td_p6_dim7*/		td_p6_dim7_ch		
+	td_p6_dimhc20	/*td_p6_dimhc23*/	td_p6_dimhc25_ch 	td_p6_dimhc27		td_p6_dimhc27_ch
+	td_p6_c20		/*td_p6_c23*/		td_p6_c25_ch		/*td_p6_c27*/		td_p6_c27_ch
+	td_p6_de0		/*td_p6_de3*/		td_p6_de5_ch		/*td_p6_de7*/		td_p6_de7_ch
+	td_p6_serv0		/*td_p6_serv3*/		td_p6_serv5_ch		/*td_p6_serv7*/		td_p6_serv7_ch	
+	td_p6_pchtr0	/*td_p6_pchtr3*/	td_p6_pchtr5_ch		/*td_p6_pchtr7*/	td_p6_pchtr7_ch
+
+	td_p6_dhde0		td_p6_dhde3 		td_p6_dhde5_ch 		td_p6_dhde7 		td_p6_dhde7_ch
+	td_p6_dhdec20	td_p6_dhdec23		td_p6_dhdec25_ch	td_p6_dhdec27 		td_p6_dhdec27_ch
+	td_p6_dec20		td_p6_dec23			td_p6_dec25_ch		td_p6_dec27 		td_p6_dec27_ch
+
+/* P7 - Imports */
+	td_p7_d0		/*td_p7_d3*/		td_p7_d5_ch			/*td_p7_d7*/		td_p7_d7_ch	
+	td_p7_db0		td_p7_db3 			td_p7_db5_ch 		td_p7_db7 			td_p7_db7_ch
+	td_p7_az0		td_p7_az3			td_p7_az5_ch		td_p7_az7			td_p7_az7_ch				
+	td_p7_dim0		td_p7_dim3			td_p7_dim5_ch		/*td_p7_dim7*/		td_p7_dim7_ch
+	td_p7_dimhc20	/*td_p7_dimhc23*/	td_p7_dimhc25_ch	td_p7_dimhc27		td_p7_dimhc27_ch
+	td_p7_c20		/*td_p7_c27*/		td_p7_c27_ch		/*td_p7_c23*/		td_p7_c25_ch
+	td_p7_de0		/*td_p7_de3*/		td_p7_de5_ch		/*td_p7_de7*/		td_p7_de7_ch		
+	td_p7_serv0		/*td_p7_serv3*/		td_p7_serv5_ch		/*td_p7_serv7*/		td_p7_serv7_ch	
+	td_p7_pchtr0	/*td_p7_pchtr3*/	td_p7_pchtr5_ch		/*td_p7_pchtr7*/	td_p7_pchtr7_ch
+			
+	td_p7_dhde0		td_p7_dhde3 		td_p7_dhde5_ch 		td_p7_dhde7 		td_p7_dhde7_ch
+	td_p7_dhdec20	td_p7_dhdec23		td_p7_dhdec25_ch	td_p7_dhdec27 		td_p7_dhdec27_ch
+	td_p7_dec20		td_p7_dec23			td_p7_dec25_ch		td_p7_dec27 		td_p7_dec27_ch
+
+/* Ratio de stocks */
+	p523_d3_log_ratio	p523_d5_log_ratio	p523_d7_log_ratio
+
+/* Contributions trimestrielles*/
+
+/* En VALEUR */
+contpib3_td_pib
+
+contpib3_td_dint_d contpib3_td_dinths_d contpib3_td_comext_d contpib3_td_dempub
+contpib3_td_p3m_d contpib3_td_p3g_d contpib3_td_p3p_d
+contpib3_td_p51_d contpib3_td_p51s_d contpib3_td_p51s_dhfz contpib3_td_p51s_fz contpib3_td_p51b_d contpib3_td_p51g_d contpib3_td_p51m_d contpib3_td_p51p_d
+contpib3_td_p523_d
+contpib3_td_p6_d	contpib3_td_p6_az	contpib3_td_p6_dim	contpib3_td_p6_de	contpib3_td_p6_serv contpib3_td_p6_pchtr
+contpib3_td_p7_d 	contpib3_td_p7_az	contpib3_td_p7_dim	contpib3_td_p7_de	contpib3_td_p7_serv contpib3_td_p7_pchtr
+
+contpib3_td_b1_d contpib3_td_b1_az contpib3_td_b1_bmna contpib3_td_b1_oq contpib3_td_d231_d
+contpib3_td_p1e_bmnahj contpib3_td_memp_bmna contpib3_td_p2e_bmna
+
+/* En VOLUME */
+contpib7_td_pib
+
+contpib7_td_dint_d contpib7_td_dinths_d contpib7_td_comext_d contpib7_td_dempub
+contpib7_td_p3g_d contpib7_td_p3m_d  contpib7_td_p3p_d
+contpib7_td_p51_d contpib7_td_p51s_d contpib7_td_p51s_dhfz contpib7_td_p51s_fz contpib7_td_p51b_d contpib7_td_p51g_d contpib7_td_p51m_d contpib7_td_p51p_d
+contpib7_td_p523_d
+contpib7_td_p6_d	contpib7_td_p6_az	contpib7_td_p6_dim	contpib7_td_p6_de	contpib7_td_p6_serv contpib7_td_p6_pchtr
+contpib7_td_p7_d 	contpib7_td_p7_az	contpib7_td_p7_dim	contpib7_td_p7_de	contpib7_td_p7_serv contpib7_td_p7_pchtr
+
+contpib7_td_b1_d contpib7_td_b1_az contpib7_td_b1_bmna contpib7_td_b1_oq contpib7_td_d231_d
+contpib7_td_p1e_bmnahj contpib7_td_memp_bmna contpib7_td_p2e_bmna
+
+/* En PRIX */
+contpib5_td_pib
+
+contpib5_td_dint_d contpib5_td_dinths_d contpib5_td_comext_d contpib5_td_dempub
+contpib5_td_p3g_d contpib5_td_p3m_d  contpib5_td_p3p_d
+contpib5_td_p51_d contpib5_td_p51s_d contpib5_td_p51s_dhfz contpib5_td_p51s_fz contpib5_td_p51b_d contpib5_td_p51g_d contpib5_td_p51m_d contpib5_td_p51p_d
+contpib5_td_p523_d
+contpib5_td_p6_d	contpib5_td_p6_az	contpib5_td_p6_dim	contpib5_td_p6_de	contpib5_td_p6_serv contpib5_td_p6_pchtr
+contpib5_td_p7_d 	contpib5_td_p7_az	contpib5_td_p7_dim	contpib5_td_p7_de	contpib5_td_p7_serv contpib5_td_p7_pchtr
+
+contpib5_td_b1_d contpib5_td_b1_az contpib5_td_b1_bmna contpib5_td_b1_oq contpib5_td_d231_d
+contpib5_td_p1e_bmnahj contpib5_td_memp_bmna contpib5_td_p2e_bmna
+
+;
+
+ADDEQ bottom,
+
+//---------------------------------------------------------------------------------------------------------------------------------------
+// EQUATIONS DE CALCUL DES PRIX DE L'ANNEE A-1 :  PRIX A-1 = VALEUR A-1 / VOLCH A-1
+
+td_pib0		    : td_pib0 = (IF      (trim==1) THEN (td_pib3(-1)+td_pib3(-2)+td_pib3(-3)+td_pib3(-4))/(td_pib7_ch(-1)+td_pib7_ch(-2)+td_pib7_ch(-3)+td_pib7_ch(-4))
+                             ELSE IF (trim==2) THEN (td_pib3(-2)+td_pib3(-3)+td_pib3(-4)+td_pib3(-5))/(td_pib7_ch(-2)+td_pib7_ch(-3)+td_pib7_ch(-4)+td_pib7_ch(-5))
+                             ELSE IF (trim==3) THEN (td_pib3(-3)+td_pib3(-4)+td_pib3(-5)+td_pib3(-6))/(td_pib7_ch(-3)+td_pib7_ch(-4)+td_pib7_ch(-5)+td_pib7_ch(-6))
+                             ELSE                   (td_pib3(-4)+td_pib3(-5)+td_pib3(-6)+td_pib3(-7))/(td_pib7_ch(-4)+td_pib7_ch(-5)+td_pib7_ch(-6)+td_pib7_ch(-7))),
+
+/* Autres agrégats ou variables */
+td_pibhs0	    : td_pibhs0 = (IF (trim==1) THEN (td_pibhs3(-1)+td_pibhs3(-2)+td_pibhs3(-3)+td_pibhs3(-4))/(td_pibhs7_ch(-1)+td_pibhs7_ch(-2)+td_pibhs7_ch(-3)+td_pibhs7_ch(-4)) ELSE IF (trim==2) THEN (td_pibhs3(-2)+td_pibhs3(-3)+td_pibhs3(-4)+td_pibhs3(-5))/(td_pibhs7_ch(-2)+td_pibhs7_ch(-3)+td_pibhs7_ch(-4)+td_pibhs7_ch(-5)) ELSE IF (trim==3) THEN (td_pibhs3(-3)+td_pibhs3(-4)+td_pibhs3(-5)+td_pibhs3(-6))/(td_pibhs7_ch(-3)+td_pibhs7_ch(-4)+td_pibhs7_ch(-5)+td_pibhs7_ch(-6)) ELSE (td_pibhs3(-4)+td_pibhs3(-5)+td_pibhs3(-6)+td_pibhs3(-7))/(td_pibhs7_ch(-4)+td_pibhs7_ch(-5)+td_pibhs7_ch(-6)+td_pibhs7_ch(-7))),
+td_rnt_d0       : td_rnt_d0 = (IF (trim==1) THEN (td_rnt_d3(-1)+td_rnt_d3(-2)+td_rnt_d3(-3)+td_rnt_d3(-4))/(td_rnt_d7_ch(-1)+td_rnt_d7_ch(-2)+td_rnt_d7_ch(-3)+td_rnt_d7_ch(-4)) ELSE IF (trim==2) THEN (td_rnt_d3(-2)+td_rnt_d3(-3)+td_rnt_d3(-4)+td_rnt_d3(-5))/(td_rnt_d7_ch(-2)+td_rnt_d7_ch(-3)+td_rnt_d7_ch(-4)+td_rnt_d7_ch(-5)) ELSE IF (trim==3) THEN (td_rnt_d3(-3)+td_rnt_d3(-4)+td_rnt_d3(-5)+td_rnt_d3(-6))/(td_rnt_d7_ch(-3)+td_rnt_d7_ch(-4)+td_rnt_d7_ch(-5)+td_rnt_d7_ch(-6)) ELSE (td_rnt_d3(-4)+td_rnt_d3(-5)+td_rnt_d3(-6)+td_rnt_d3(-7))/(td_rnt_d7_ch(-4)+td_rnt_d7_ch(-5)+td_rnt_d7_ch(-6)+td_rnt_d7_ch(-7))),
+td_dint_d0      : td_dint_d0 = (IF (trim==1) THEN (td_dint_d3(-1)+td_dint_d3(-2)+td_dint_d3(-3)+td_dint_d3(-4))/(td_dint_d7_ch(-1)+td_dint_d7_ch(-2)+td_dint_d7_ch(-3)+td_dint_d7_ch(-4)) ELSE IF (trim==2) THEN (td_dint_d3(-2)+td_dint_d3(-3)+td_dint_d3(-4)+td_dint_d3(-5))/(td_dint_d7_ch(-2)+td_dint_d7_ch(-3)+td_dint_d7_ch(-4)+td_dint_d7_ch(-5)) ELSE IF (trim==3) THEN (td_dint_d3(-3)+td_dint_d3(-4)+td_dint_d3(-5)+td_dint_d3(-6))/(td_dint_d7_ch(-3)+td_dint_d7_ch(-4)+td_dint_d7_ch(-5)+td_dint_d7_ch(-6)) ELSE (td_dint_d3(-4)+td_dint_d3(-5)+td_dint_d3(-6)+td_dint_d3(-7))/(td_dint_d7_ch(-4)+td_dint_d7_ch(-5)+td_dint_d7_ch(-6)+td_dint_d7_ch(-7))),
+td_dinths_d0    : td_dinths_d0 = (IF (trim==1) THEN (td_dinths_d3(-1)+td_dinths_d3(-2)+td_dinths_d3(-3)+td_dinths_d3(-4))/(td_dinths_d7_ch(-1)+td_dinths_d7_ch(-2)+td_dinths_d7_ch(-3)+td_dinths_d7_ch(-4)) ELSE IF (trim==2) THEN (td_dinths_d3(-2)+td_dinths_d3(-3)+td_dinths_d3(-4)+td_dinths_d3(-5))/(td_dinths_d7_ch(-2)+td_dinths_d7_ch(-3)+td_dinths_d7_ch(-4)+td_dinths_d7_ch(-5)) ELSE IF (trim==3) THEN (td_dinths_d3(-3)+td_dinths_d3(-4)+td_dinths_d3(-5)+td_dinths_d3(-6))/(td_dinths_d7_ch(-3)+td_dinths_d7_ch(-4)+td_dinths_d7_ch(-5)+td_dinths_d7_ch(-6)) ELSE (td_dinths_d3(-4)+td_dinths_d3(-5)+td_dinths_d3(-6)+td_dinths_d3(-7))/(td_dinths_d7_ch(-4)+td_dinths_d7_ch(-5)+td_dinths_d7_ch(-6)+td_dinths_d7_ch(-7))),
+td_dhs_d0	    : td_dhs_d0 = (IF (trim==1) THEN (td_dhs_d3(-1)+td_dhs_d3(-2)+td_dhs_d3(-3)+td_dhs_d3(-4))/(td_dhs_d7_ch(-1)+td_dhs_d7_ch(-2)+td_dhs_d7_ch(-3)+td_dhs_d7_ch(-4)) ELSE IF (trim==2) THEN (td_dhs_d3(-2)+td_dhs_d3(-3)+td_dhs_d3(-4)+td_dhs_d3(-5))/(td_dhs_d7_ch(-2)+td_dhs_d7_ch(-3)+td_dhs_d7_ch(-4)+td_dhs_d7_ch(-5)) ELSE IF (trim==3) THEN (td_dhs_d3(-3)+td_dhs_d3(-4)+td_dhs_d3(-5)+td_dhs_d3(-6))/(td_dhs_d7_ch(-3)+td_dhs_d7_ch(-4)+td_dhs_d7_ch(-5)+td_dhs_d7_ch(-6)) ELSE (td_dhs_d3(-4)+td_dhs_d3(-5)+td_dhs_d3(-6)+td_dhs_d3(-7))/(td_dhs_d7_ch(-4)+td_dhs_d7_ch(-5)+td_dhs_d7_ch(-6)+td_dhs_d7_ch(-7))),
+
+
+td_comext_d0	    : td_comext_d0 = (IF (trim==1) THEN (td_comext_d3(-1)+td_comext_d3(-2)+td_comext_d3(-3)+td_comext_d3(-4))/(td_comext_d7_ch(-1)+td_comext_d7_ch(-2)+td_comext_d7_ch(-3)+td_comext_d7_ch(-4)) ELSE IF (trim==2) THEN (td_comext_d3(-2)+td_comext_d3(-3)+td_comext_d3(-4)+td_comext_d3(-5))/(td_comext_d7_ch(-2)+td_comext_d7_ch(-3)+td_comext_d7_ch(-4)+td_comext_d7_ch(-5)) ELSE IF (trim==3) THEN (td_comext_d3(-3)+td_comext_d3(-4)+td_comext_d3(-5)+td_comext_d3(-6))/(td_comext_d7_ch(-3)+td_comext_d7_ch(-4)+td_comext_d7_ch(-5)+td_comext_d7_ch(-6)) ELSE (td_comext_d3(-4)+td_comext_d3(-5)+td_comext_d3(-6)+td_comext_d3(-7))/(td_comext_d7_ch(-4)+td_comext_d7_ch(-5)+td_comext_d7_ch(-6)+td_comext_d7_ch(-7))),
+td_dempub0	    : td_dempub0 = (IF (trim==1) THEN (td_dempub3(-1)+td_dempub3(-2)+td_dempub3(-3)+td_dempub3(-4))/(td_dempub7_ch(-1)+td_dempub7_ch(-2)+td_dempub7_ch(-3)+td_dempub7_ch(-4)) ELSE IF (trim==2) THEN (td_dempub3(-2)+td_dempub3(-3)+td_dempub3(-4)+td_dempub3(-5))/(td_dempub7_ch(-2)+td_dempub7_ch(-3)+td_dempub7_ch(-4)+td_dempub7_ch(-5)) ELSE IF (trim==3) THEN (td_dempub3(-3)+td_dempub3(-4)+td_dempub3(-5)+td_dempub3(-6))/(td_dempub7_ch(-3)+td_dempub7_ch(-4)+td_dempub7_ch(-5)+td_dempub7_ch(-6)) ELSE (td_dempub3(-4)+td_dempub3(-5)+td_dempub3(-6)+td_dempub3(-7))/(td_dempub7_ch(-4)+td_dempub7_ch(-5)+td_dempub7_ch(-6)+td_dempub7_ch(-7))),
+
+
+/* Approche offre : VA(B1), Consommation Intermédiaire (P2), production (P1) */
+
+td_p1e_d0		: td_p1e_d0		= (IF (trim==1) THEN (td_p1e_d3(-1)+td_p1e_d3(-2)+td_p1e_d3(-3)+td_p1e_d3(-4))/(td_p1e_d7_ch(-1)+td_p1e_d7_ch(-2)+td_p1e_d7_ch(-3)+td_p1e_d7_ch(-4)) ELSE IF (trim==2) THEN (td_p1e_d3(-2)+td_p1e_d3(-3)+td_p1e_d3(-4)+td_p1e_d3(-5))/(td_p1e_d7_ch(-2)+td_p1e_d7_ch(-3)+td_p1e_d7_ch(-4)+td_p1e_d7_ch(-5)) ELSE IF (trim==3) THEN (td_p1e_d3(-3)+td_p1e_d3(-4)+td_p1e_d3(-5)+td_p1e_d3(-6))/(td_p1e_d7_ch(-3)+td_p1e_d7_ch(-4)+td_p1e_d7_ch(-5)+td_p1e_d7_ch(-6)) ELSE (td_p1e_d3(-4)+td_p1e_d3(-5)+td_p1e_d3(-6)+td_p1e_d3(-7))/(td_p1e_d7_ch(-4)+td_p1e_d7_ch(-5)+td_p1e_d7_ch(-6)+td_p1e_d7_ch(-7))),
+td_p1e_az0		: td_p1e_az0	= (IF (trim==1) THEN (td_p1e_az3(-1)+td_p1e_az3(-2)+td_p1e_az3(-3)+td_p1e_az3(-4))/(td_p1e_az7_ch(-1)+td_p1e_az7_ch(-2)+td_p1e_az7_ch(-3)+td_p1e_az7_ch(-4)) ELSE IF (trim==2) THEN (td_p1e_az3(-2)+td_p1e_az3(-3)+td_p1e_az3(-4)+td_p1e_az3(-5))/(td_p1e_az7_ch(-2)+td_p1e_az7_ch(-3)+td_p1e_az7_ch(-4)+td_p1e_az7_ch(-5)) ELSE IF (trim==3) THEN (td_p1e_az3(-3)+td_p1e_az3(-4)+td_p1e_az3(-5)+td_p1e_az3(-6))/(td_p1e_az7_ch(-3)+td_p1e_az7_ch(-4)+td_p1e_az7_ch(-5)+td_p1e_az7_ch(-6)) ELSE (td_p1e_az3(-4)+td_p1e_az3(-5)+td_p1e_az3(-6)+td_p1e_az3(-7))/(td_p1e_az7_ch(-4)+td_p1e_az7_ch(-5)+td_p1e_az7_ch(-6)+td_p1e_az7_ch(-7))),
+td_p1e_bmna0	: td_p1e_bmna0	= (IF (trim==1) THEN (td_p1e_bmna3(-1)+td_p1e_bmna3(-2)+td_p1e_bmna3(-3)+td_p1e_bmna3(-4))/(td_p1e_bmna7_ch(-1)+td_p1e_bmna7_ch(-2)+td_p1e_bmna7_ch(-3)+td_p1e_bmna7_ch(-4)) ELSE IF (trim==2) THEN (td_p1e_bmna3(-2)+td_p1e_bmna3(-3)+td_p1e_bmna3(-4)+td_p1e_bmna3(-5))/(td_p1e_bmna7_ch(-2)+td_p1e_bmna7_ch(-3)+td_p1e_bmna7_ch(-4)+td_p1e_bmna7_ch(-5)) ELSE IF (trim==3) THEN (td_p1e_bmna3(-3)+td_p1e_bmna3(-4)+td_p1e_bmna3(-5)+td_p1e_bmna3(-6))/(td_p1e_bmna7_ch(-3)+td_p1e_bmna7_ch(-4)+td_p1e_bmna7_ch(-5)+td_p1e_bmna7_ch(-6)) ELSE (td_p1e_bmna3(-4)+td_p1e_bmna3(-5)+td_p1e_bmna3(-6)+td_p1e_bmna3(-7))/(td_p1e_bmna7_ch(-4)+td_p1e_bmna7_ch(-5)+td_p1e_bmna7_ch(-6)+td_p1e_bmna7_ch(-7))),
+td_p1e_oq0		: td_p1e_oq0	= (IF (trim==1) THEN (td_p1e_oq3(-1)+td_p1e_oq3(-2)+td_p1e_oq3(-3)+td_p1e_oq3(-4))/(td_p1e_oq7_ch(-1)+td_p1e_oq7_ch(-2)+td_p1e_oq7_ch(-3)+td_p1e_oq7_ch(-4)) ELSE IF (trim==2) THEN (td_p1e_oq3(-2)+td_p1e_oq3(-3)+td_p1e_oq3(-4)+td_p1e_oq3(-5))/(td_p1e_oq7_ch(-2)+td_p1e_oq7_ch(-3)+td_p1e_oq7_ch(-4)+td_p1e_oq7_ch(-5)) ELSE IF (trim==3) THEN (td_p1e_oq3(-3)+td_p1e_oq3(-4)+td_p1e_oq3(-5)+td_p1e_oq3(-6))/(td_p1e_oq7_ch(-3)+td_p1e_oq7_ch(-4)+td_p1e_oq7_ch(-5)+td_p1e_oq7_ch(-6)) ELSE (td_p1e_oq3(-4)+td_p1e_oq3(-5)+td_p1e_oq3(-6)+td_p1e_oq3(-7))/(td_p1e_oq7_ch(-4)+td_p1e_oq7_ch(-5)+td_p1e_oq7_ch(-6)+td_p1e_oq7_ch(-7))),
+
+td_p1e_bmnahj0	: td_p1e_bmnahj0 = (IF (trim==1) THEN (td_p1e_bmnahj3(-1)+td_p1e_bmnahj3(-2)+td_p1e_bmnahj3(-3)+td_p1e_bmnahj3(-4))/(td_p1e_bmnahj7_ch(-1)+td_p1e_bmnahj7_ch(-2)+td_p1e_bmnahj7_ch(-3)+td_p1e_bmnahj7_ch(-4)) ELSE IF (trim==2) THEN (td_p1e_bmnahj3(-2)+td_p1e_bmnahj3(-3)+td_p1e_bmnahj3(-4)+td_p1e_bmnahj3(-5))/(td_p1e_bmnahj7_ch(-2)+td_p1e_bmnahj7_ch(-3)+td_p1e_bmnahj7_ch(-4)+td_p1e_bmnahj7_ch(-5)) ELSE IF (trim==3) THEN (td_p1e_bmnahj3(-3)+td_p1e_bmnahj3(-4)+td_p1e_bmnahj3(-5)+td_p1e_bmnahj3(-6))/(td_p1e_bmnahj7_ch(-3)+td_p1e_bmnahj7_ch(-4)+td_p1e_bmnahj7_ch(-5)+td_p1e_bmnahj7_ch(-6)) ELSE (td_p1e_bmnahj3(-4)+td_p1e_bmnahj3(-5)+td_p1e_bmnahj3(-6)+td_p1e_bmnahj3(-7))/(td_p1e_bmnahj7_ch(-4)+td_p1e_bmnahj7_ch(-5)+td_p1e_bmnahj7_ch(-6)+td_p1e_bmnahj7_ch(-7))),
+td_memp_bmna0	: td_memp_bmna0 = (IF (trim==1) THEN (td_memp_bmna3(-1)+td_memp_bmna3(-2)+td_memp_bmna3(-3)+td_memp_bmna3(-4))/(td_memp_bmna7_ch(-1)+td_memp_bmna7_ch(-2)+td_memp_bmna7_ch(-3)+td_memp_bmna7_ch(-4)) ELSE IF (trim==2) THEN (td_memp_bmna3(-2)+td_memp_bmna3(-3)+td_memp_bmna3(-4)+td_memp_bmna3(-5))/(td_memp_bmna7_ch(-2)+td_memp_bmna7_ch(-3)+td_memp_bmna7_ch(-4)+td_memp_bmna7_ch(-5)) ELSE IF (trim==3) THEN (td_memp_bmna3(-3)+td_memp_bmna3(-4)+td_memp_bmna3(-5)+td_memp_bmna3(-6))/(td_memp_bmna7_ch(-3)+td_memp_bmna7_ch(-4)+td_memp_bmna7_ch(-5)+td_memp_bmna7_ch(-6)) ELSE (td_memp_bmna3(-4)+td_memp_bmna3(-5)+td_memp_bmna3(-6)+td_memp_bmna3(-7))/(td_memp_bmna7_ch(-4)+td_memp_bmna7_ch(-5)+td_memp_bmna7_ch(-6)+td_memp_bmna7_ch(-7))),
+
+td_p1mi_d0		: td_p1mi_d0	= (IF (trim==1) THEN (td_p1mi_d3(-1)+td_p1mi_d3(-2)+td_p1mi_d3(-3)+td_p1mi_d3(-4))/(td_p1mi_d7_ch(-1)+td_p1mi_d7_ch(-2)+td_p1mi_d7_ch(-3)+td_p1mi_d7_ch(-4)) ELSE IF (trim==2) THEN (td_p1mi_d3(-2)+td_p1mi_d3(-3)+td_p1mi_d3(-4)+td_p1mi_d3(-5))/(td_p1mi_d7_ch(-2)+td_p1mi_d7_ch(-3)+td_p1mi_d7_ch(-4)+td_p1mi_d7_ch(-5)) ELSE IF (trim==3) THEN (td_p1mi_d3(-3)+td_p1mi_d3(-4)+td_p1mi_d3(-5)+td_p1mi_d3(-6))/(td_p1mi_d7_ch(-3)+td_p1mi_d7_ch(-4)+td_p1mi_d7_ch(-5)+td_p1mi_d7_ch(-6)) ELSE (td_p1mi_d3(-4)+td_p1mi_d3(-5)+td_p1mi_d3(-6)+td_p1mi_d3(-7))/(td_p1mi_d7_ch(-4)+td_p1mi_d7_ch(-5)+td_p1mi_d7_ch(-6)+td_p1mi_d7_ch(-7))),
+td_p1mi_bmna0	: td_p1mi_bmna0 = (IF (trim==1) THEN (td_p1mi_bmna3(-1)+td_p1mi_bmna3(-2)+td_p1mi_bmna3(-3)+td_p1mi_bmna3(-4))/(td_p1mi_bmna7_ch(-1)+td_p1mi_bmna7_ch(-2)+td_p1mi_bmna7_ch(-3)+td_p1mi_bmna7_ch(-4)) ELSE IF (trim==2) THEN (td_p1mi_bmna3(-2)+td_p1mi_bmna3(-3)+td_p1mi_bmna3(-4)+td_p1mi_bmna3(-5))/(td_p1mi_bmna7_ch(-2)+td_p1mi_bmna7_ch(-3)+td_p1mi_bmna7_ch(-4)+td_p1mi_bmna7_ch(-5)) ELSE IF (trim==3) THEN (td_p1mi_bmna3(-3)+td_p1mi_bmna3(-4)+td_p1mi_bmna3(-5)+td_p1mi_bmna3(-6))/(td_p1mi_bmna7_ch(-3)+td_p1mi_bmna7_ch(-4)+td_p1mi_bmna7_ch(-5)+td_p1mi_bmna7_ch(-6)) ELSE (td_p1mi_bmna3(-4)+td_p1mi_bmna3(-5)+td_p1mi_bmna3(-6)+td_p1mi_bmna3(-7))/(td_p1mi_bmna7_ch(-4)+td_p1mi_bmna7_ch(-5)+td_p1mi_bmna7_ch(-6)+td_p1mi_bmna7_ch(-7))),
+td_p1mi_bmnahj0	: td_p1mi_bmnahj0 = (IF (trim==1) THEN (td_p1mi_bmnahj3(-1)+td_p1mi_bmnahj3(-2)+td_p1mi_bmnahj3(-3)+td_p1mi_bmnahj3(-4))/(td_p1mi_bmnahj7_ch(-1)+td_p1mi_bmnahj7_ch(-2)+td_p1mi_bmnahj7_ch(-3)+td_p1mi_bmnahj7_ch(-4)) ELSE IF (trim==2) THEN (td_p1mi_bmnahj3(-2)+td_p1mi_bmnahj3(-3)+td_p1mi_bmnahj3(-4)+td_p1mi_bmnahj3(-5))/(td_p1mi_bmnahj7_ch(-2)+td_p1mi_bmnahj7_ch(-3)+td_p1mi_bmnahj7_ch(-4)+td_p1mi_bmnahj7_ch(-5)) ELSE IF (trim==3) THEN (td_p1mi_bmnahj3(-3)+td_p1mi_bmnahj3(-4)+td_p1mi_bmnahj3(-5)+td_p1mi_bmnahj3(-6))/(td_p1mi_bmnahj7_ch(-3)+td_p1mi_bmnahj7_ch(-4)+td_p1mi_bmnahj7_ch(-5)+td_p1mi_bmnahj7_ch(-6)) ELSE (td_p1mi_bmnahj3(-4)+td_p1mi_bmnahj3(-5)+td_p1mi_bmnahj3(-6)+td_p1mi_bmnahj3(-7))/(td_p1mi_bmnahj7_ch(-4)+td_p1mi_bmnahj7_ch(-5)+td_p1mi_bmnahj7_ch(-6)+td_p1mi_bmnahj7_ch(-7))),
+
+td_p2e_d0		: td_p2e_d0		= (IF (trim==1) THEN (td_p2e_d3(-1)+td_p2e_d3(-2)+td_p2e_d3(-3)+td_p2e_d3(-4))/(td_p2e_d7_ch(-1)+td_p2e_d7_ch(-2)+td_p2e_d7_ch(-3)+td_p2e_d7_ch(-4)) ELSE IF (trim==2) THEN (td_p2e_d3(-2)+td_p2e_d3(-3)+td_p2e_d3(-4)+td_p2e_d3(-5))/(td_p2e_d7_ch(-2)+td_p2e_d7_ch(-3)+td_p2e_d7_ch(-4)+td_p2e_d7_ch(-5)) ELSE IF (trim==3) THEN (td_p2e_d3(-3)+td_p2e_d3(-4)+td_p2e_d3(-5)+td_p2e_d3(-6))/(td_p2e_d7_ch(-3)+td_p2e_d7_ch(-4)+td_p2e_d7_ch(-5)+td_p2e_d7_ch(-6)) ELSE (td_p2e_d3(-4)+td_p2e_d3(-5)+td_p2e_d3(-6)+td_p2e_d3(-7))/(td_p2e_d7_ch(-4)+td_p2e_d7_ch(-5)+td_p2e_d7_ch(-6)+td_p2e_d7_ch(-7))),
+td_p2e_az0		: td_p2e_az0	= (IF (trim==1) THEN (td_p2e_az3(-1)+td_p2e_az3(-2)+td_p2e_az3(-3)+td_p2e_az3(-4))/(td_p2e_az7_ch(-1)+td_p2e_az7_ch(-2)+td_p2e_az7_ch(-3)+td_p2e_az7_ch(-4)) ELSE IF (trim==2) THEN (td_p2e_az3(-2)+td_p2e_az3(-3)+td_p2e_az3(-4)+td_p2e_az3(-5))/(td_p2e_az7_ch(-2)+td_p2e_az7_ch(-3)+td_p2e_az7_ch(-4)+td_p2e_az7_ch(-5)) ELSE IF (trim==3) THEN (td_p2e_az3(-3)+td_p2e_az3(-4)+td_p2e_az3(-5)+td_p2e_az3(-6))/(td_p2e_az7_ch(-3)+td_p2e_az7_ch(-4)+td_p2e_az7_ch(-5)+td_p2e_az7_ch(-6)) ELSE (td_p2e_az3(-4)+td_p2e_az3(-5)+td_p2e_az3(-6)+td_p2e_az3(-7))/(td_p2e_az7_ch(-4)+td_p2e_az7_ch(-5)+td_p2e_az7_ch(-6)+td_p2e_az7_ch(-7))),
+td_p2e_bmna0	: td_p2e_bmna0	= (IF (trim==1) THEN (td_p2e_bmna3(-1)+td_p2e_bmna3(-2)+td_p2e_bmna3(-3)+td_p2e_bmna3(-4))/(td_p2e_bmna7_ch(-1)+td_p2e_bmna7_ch(-2)+td_p2e_bmna7_ch(-3)+td_p2e_bmna7_ch(-4)) ELSE IF (trim==2) THEN (td_p2e_bmna3(-2)+td_p2e_bmna3(-3)+td_p2e_bmna3(-4)+td_p2e_bmna3(-5))/(td_p2e_bmna7_ch(-2)+td_p2e_bmna7_ch(-3)+td_p2e_bmna7_ch(-4)+td_p2e_bmna7_ch(-5)) ELSE IF (trim==3) THEN (td_p2e_bmna3(-3)+td_p2e_bmna3(-4)+td_p2e_bmna3(-5)+td_p2e_bmna3(-6))/(td_p2e_bmna7_ch(-3)+td_p2e_bmna7_ch(-4)+td_p2e_bmna7_ch(-5)+td_p2e_bmna7_ch(-6)) ELSE (td_p2e_bmna3(-4)+td_p2e_bmna3(-5)+td_p2e_bmna3(-6)+td_p2e_bmna3(-7))/(td_p2e_bmna7_ch(-4)+td_p2e_bmna7_ch(-5)+td_p2e_bmna7_ch(-6)+td_p2e_bmna7_ch(-7))),
+td_p2e_oq0		: td_p2e_oq0	= (IF (trim==1) THEN (td_p2e_oq3(-1)+td_p2e_oq3(-2)+td_p2e_oq3(-3)+td_p2e_oq3(-4))/(td_p2e_oq7_ch(-1)+td_p2e_oq7_ch(-2)+td_p2e_oq7_ch(-3)+td_p2e_oq7_ch(-4)) ELSE IF (trim==2) THEN (td_p2e_oq3(-2)+td_p2e_oq3(-3)+td_p2e_oq3(-4)+td_p2e_oq3(-5))/(td_p2e_oq7_ch(-2)+td_p2e_oq7_ch(-3)+td_p2e_oq7_ch(-4)+td_p2e_oq7_ch(-5)) ELSE IF (trim==3) THEN (td_p2e_oq3(-3)+td_p2e_oq3(-4)+td_p2e_oq3(-5)+td_p2e_oq3(-6))/(td_p2e_oq7_ch(-3)+td_p2e_oq7_ch(-4)+td_p2e_oq7_ch(-5)+td_p2e_oq7_ch(-6)) ELSE (td_p2e_oq3(-4)+td_p2e_oq3(-5)+td_p2e_oq3(-6)+td_p2e_oq3(-7))/(td_p2e_oq7_ch(-4)+td_p2e_oq7_ch(-5)+td_p2e_oq7_ch(-6)+td_p2e_oq7_ch(-7))),
+
+td_b1_d0		: td_b1_d0		= (IF (trim==1) THEN (td_b1_d3(-1)+td_b1_d3(-2)+td_b1_d3(-3)+td_b1_d3(-4))/(td_b1_d7_ch(-1)+td_b1_d7_ch(-2)+td_b1_d7_ch(-3)+td_b1_d7_ch(-4)) ELSE IF (trim==2) THEN (td_b1_d3(-2)+td_b1_d3(-3)+td_b1_d3(-4)+td_b1_d3(-5))/(td_b1_d7_ch(-2)+td_b1_d7_ch(-3)+td_b1_d7_ch(-4)+td_b1_d7_ch(-5)) ELSE IF (trim==3) THEN (td_b1_d3(-3)+td_b1_d3(-4)+td_b1_d3(-5)+td_b1_d3(-6))/(td_b1_d7_ch(-3)+td_b1_d7_ch(-4)+td_b1_d7_ch(-5)+td_b1_d7_ch(-6)) ELSE (td_b1_d3(-4)+td_b1_d3(-5)+td_b1_d3(-6)+td_b1_d3(-7))/(td_b1_d7_ch(-4)+td_b1_d7_ch(-5)+td_b1_d7_ch(-6)+td_b1_d7_ch(-7))),
+td_b1_az0		: td_b1_az0		= (IF (trim==1) THEN (td_b1_az3(-1)+td_b1_az3(-2)+td_b1_az3(-3)+td_b1_az3(-4))/(td_b1_az7_ch(-1)+td_b1_az7_ch(-2)+td_b1_az7_ch(-3)+td_b1_az7_ch(-4)) ELSE IF (trim==2) THEN (td_b1_az3(-2)+td_b1_az3(-3)+td_b1_az3(-4)+td_b1_az3(-5))/(td_b1_az7_ch(-2)+td_b1_az7_ch(-3)+td_b1_az7_ch(-4)+td_b1_az7_ch(-5)) ELSE IF (trim==3) THEN (td_b1_az3(-3)+td_b1_az3(-4)+td_b1_az3(-5)+td_b1_az3(-6))/(td_b1_az7_ch(-3)+td_b1_az7_ch(-4)+td_b1_az7_ch(-5)+td_b1_az7_ch(-6)) ELSE (td_b1_az3(-4)+td_b1_az3(-5)+td_b1_az3(-6)+td_b1_az3(-7))/(td_b1_az7_ch(-4)+td_b1_az7_ch(-5)+td_b1_az7_ch(-6)+td_b1_az7_ch(-7))),
+td_b1_bmna0		: td_b1_bmna0	= (IF (trim==1) THEN (td_b1_bmna3(-1)+td_b1_bmna3(-2)+td_b1_bmna3(-3)+td_b1_bmna3(-4))/(td_b1_bmna7_ch(-1)+td_b1_bmna7_ch(-2)+td_b1_bmna7_ch(-3)+td_b1_bmna7_ch(-4)) ELSE IF (trim==2) THEN (td_b1_bmna3(-2)+td_b1_bmna3(-3)+td_b1_bmna3(-4)+td_b1_bmna3(-5))/(td_b1_bmna7_ch(-2)+td_b1_bmna7_ch(-3)+td_b1_bmna7_ch(-4)+td_b1_bmna7_ch(-5)) ELSE IF (trim==3) THEN (td_b1_bmna3(-3)+td_b1_bmna3(-4)+td_b1_bmna3(-5)+td_b1_bmna3(-6))/(td_b1_bmna7_ch(-3)+td_b1_bmna7_ch(-4)+td_b1_bmna7_ch(-5)+td_b1_bmna7_ch(-6)) ELSE (td_b1_bmna3(-4)+td_b1_bmna3(-5)+td_b1_bmna3(-6)+td_b1_bmna3(-7))/(td_b1_bmna7_ch(-4)+td_b1_bmna7_ch(-5)+td_b1_bmna7_ch(-6)+td_b1_bmna7_ch(-7))),
+td_b1_oq0		: td_b1_oq0		= (IF (trim==1) THEN (td_b1_oq3(-1)+td_b1_oq3(-2)+td_b1_oq3(-3)+td_b1_oq3(-4))/(td_b1_oq7_ch(-1)+td_b1_oq7_ch(-2)+td_b1_oq7_ch(-3)+td_b1_oq7_ch(-4)) ELSE IF (trim==2) THEN (td_b1_oq3(-2)+td_b1_oq3(-3)+td_b1_oq3(-4)+td_b1_oq3(-5))/(td_b1_oq7_ch(-2)+td_b1_oq7_ch(-3)+td_b1_oq7_ch(-4)+td_b1_oq7_ch(-5)) ELSE IF (trim==3) THEN (td_b1_oq3(-3)+td_b1_oq3(-4)+td_b1_oq3(-5)+td_b1_oq3(-6))/(td_b1_oq7_ch(-3)+td_b1_oq7_ch(-4)+td_b1_oq7_ch(-5)+td_b1_oq7_ch(-6)) ELSE (td_b1_oq3(-4)+td_b1_oq3(-5)+td_b1_oq3(-6)+td_b1_oq3(-7))/(td_b1_oq7_ch(-4)+td_b1_oq7_ch(-5)+td_b1_oq7_ch(-6)+td_b1_oq7_ch(-7))),
+
+td_d231_d0  	: td_d231_d0	= (IF (trim==1) THEN (td_d231_d3(-1)+td_d231_d3(-2)+td_d231_d3(-3)+td_d231_d3(-4))/(td_d231_d7_ch(-1)+td_d231_d7_ch(-2)+td_d231_d7_ch(-3)+td_d231_d7_ch(-4)) ELSE IF (trim==2) THEN (td_d231_d3(-2)+td_d231_d3(-3)+td_d231_d3(-4)+td_d231_d3(-5))/(td_d231_d7_ch(-2)+td_d231_d7_ch(-3)+td_d231_d7_ch(-4)+td_d231_d7_ch(-5)) ELSE IF (trim==3) THEN (td_d231_d3(-3)+td_d231_d3(-4)+td_d231_d3(-5)+td_d231_d3(-6))/(td_d231_d7_ch(-3)+td_d231_d7_ch(-4)+td_d231_d7_ch(-5)+td_d231_d7_ch(-6)) ELSE (td_d231_d3(-4)+td_d231_d3(-5)+td_d231_d3(-6)+td_d231_d3(-7))/(td_d231_d7_ch(-4)+td_d231_d7_ch(-5)+td_d231_d7_ch(-6)+td_d231_d7_ch(-7))),
+
+                    
+/* Approche demande : Consommation finale (P3), FBCF et variations de stocks (P5), exports (P6) et imports (P7) */
+
+td_p3g_d0		: td_p3g_d0		= (IF (trim==1) THEN (td_p3g_d3(-1)+td_p3g_d3(-2)+td_p3g_d3(-3)+td_p3g_d3(-4))/(td_p3g_d7_ch(-1)+td_p3g_d7_ch(-2)+td_p3g_d7_ch(-3)+td_p3g_d7_ch(-4)) ELSE IF (trim==2) THEN (td_p3g_d3(-2)+td_p3g_d3(-3)+td_p3g_d3(-4)+td_p3g_d3(-5))/(td_p3g_d7_ch(-2)+td_p3g_d7_ch(-3)+td_p3g_d7_ch(-4)+td_p3g_d7_ch(-5)) ELSE IF (trim==3) THEN (td_p3g_d3(-3)+td_p3g_d3(-4)+td_p3g_d3(-5)+td_p3g_d3(-6))/(td_p3g_d7_ch(-3)+td_p3g_d7_ch(-4)+td_p3g_d7_ch(-5)+td_p3g_d7_ch(-6)) ELSE (td_p3g_d3(-4)+td_p3g_d3(-5)+td_p3g_d3(-6)+td_p3g_d3(-7))/(td_p3g_d7_ch(-4)+td_p3g_d7_ch(-5)+td_p3g_d7_ch(-6)+td_p3g_d7_ch(-7))),
+td_p3m_d0		: td_p3m_d0		= (IF (trim==1) THEN (td_p3m_d3(-1)+td_p3m_d3(-2)+td_p3m_d3(-3)+td_p3m_d3(-4))/(td_p3m_d7_ch(-1)+td_p3m_d7_ch(-2)+td_p3m_d7_ch(-3)+td_p3m_d7_ch(-4)) ELSE IF (trim==2) THEN (td_p3m_d3(-2)+td_p3m_d3(-3)+td_p3m_d3(-4)+td_p3m_d3(-5))/(td_p3m_d7_ch(-2)+td_p3m_d7_ch(-3)+td_p3m_d7_ch(-4)+td_p3m_d7_ch(-5)) ELSE IF (trim==3) THEN (td_p3m_d3(-3)+td_p3m_d3(-4)+td_p3m_d3(-5)+td_p3m_d3(-6))/(td_p3m_d7_ch(-3)+td_p3m_d7_ch(-4)+td_p3m_d7_ch(-5)+td_p3m_d7_ch(-6)) ELSE (td_p3m_d3(-4)+td_p3m_d3(-5)+td_p3m_d3(-6)+td_p3m_d3(-7))/(td_p3m_d7_ch(-4)+td_p3m_d7_ch(-5)+td_p3m_d7_ch(-6)+td_p3m_d7_ch(-7))),
+td_p3p_d0		: td_p3p_d0		= (IF (trim==1) THEN (td_p3p_d3(-1)+td_p3p_d3(-2)+td_p3p_d3(-3)+td_p3p_d3(-4))/(td_p3p_d7_ch(-1)+td_p3p_d7_ch(-2)+td_p3p_d7_ch(-3)+td_p3p_d7_ch(-4)) ELSE IF (trim==2) THEN (td_p3p_d3(-2)+td_p3p_d3(-3)+td_p3p_d3(-4)+td_p3p_d3(-5))/(td_p3p_d7_ch(-2)+td_p3p_d7_ch(-3)+td_p3p_d7_ch(-4)+td_p3p_d7_ch(-5)) ELSE IF (trim==3) THEN (td_p3p_d3(-3)+td_p3p_d3(-4)+td_p3p_d3(-5)+td_p3p_d3(-6))/(td_p3p_d7_ch(-3)+td_p3p_d7_ch(-4)+td_p3p_d7_ch(-5)+td_p3p_d7_ch(-6)) ELSE (td_p3p_d3(-4)+td_p3p_d3(-5)+td_p3p_d3(-6)+td_p3p_d3(-7))/(td_p3p_d7_ch(-4)+td_p3p_d7_ch(-5)+td_p3p_d7_ch(-6)+td_p3p_d7_ch(-7))),
+
+td_p5_d0		: td_p5_d0		= (IF (trim==1) THEN (td_p5_d3(-1)+td_p5_d3(-2)+td_p5_d3(-3)+td_p5_d3(-4))/(td_p5_d7_ch(-1)+td_p5_d7_ch(-2)+td_p5_d7_ch(-3)+td_p5_d7_ch(-4)) ELSE IF (trim==2) THEN (td_p5_d3(-2)+td_p5_d3(-3)+td_p5_d3(-4)+td_p5_d3(-5))/(td_p5_d7_ch(-2)+td_p5_d7_ch(-3)+td_p5_d7_ch(-4)+td_p5_d7_ch(-5)) ELSE IF (trim==3) THEN (td_p5_d3(-3)+td_p5_d3(-4)+td_p5_d3(-5)+td_p5_d3(-6))/(td_p5_d7_ch(-3)+td_p5_d7_ch(-4)+td_p5_d7_ch(-5)+td_p5_d7_ch(-6)) ELSE (td_p5_d3(-4)+td_p5_d3(-5)+td_p5_d3(-6)+td_p5_d3(-7))/(td_p5_d7_ch(-4)+td_p5_d7_ch(-5)+td_p5_d7_ch(-6)+td_p5_d7_ch(-7))),
+td_p51_d0		: td_p51_d0		= (IF (trim==1) THEN (td_p51_d3(-1)+td_p51_d3(-2)+td_p51_d3(-3)+td_p51_d3(-4))/(td_p51_d7_ch(-1)+td_p51_d7_ch(-2)+td_p51_d7_ch(-3)+td_p51_d7_ch(-4)) ELSE IF (trim==2) THEN (td_p51_d3(-2)+td_p51_d3(-3)+td_p51_d3(-4)+td_p51_d3(-5))/(td_p51_d7_ch(-2)+td_p51_d7_ch(-3)+td_p51_d7_ch(-4)+td_p51_d7_ch(-5)) ELSE IF (trim==3) THEN (td_p51_d3(-3)+td_p51_d3(-4)+td_p51_d3(-5)+td_p51_d3(-6))/(td_p51_d7_ch(-3)+td_p51_d7_ch(-4)+td_p51_d7_ch(-5)+td_p51_d7_ch(-6)) ELSE (td_p51_d3(-4)+td_p51_d3(-5)+td_p51_d3(-6)+td_p51_d3(-7))/(td_p51_d7_ch(-4)+td_p51_d7_ch(-5)+td_p51_d7_ch(-6)+td_p51_d7_ch(-7))),
+td_p51s_d0		: td_p51s_d0	= (IF (trim==1) THEN (td_p51s_d3(-1)+td_p51s_d3(-2)+td_p51s_d3(-3)+td_p51s_d3(-4))/(td_p51s_d7_ch(-1)+td_p51s_d7_ch(-2)+td_p51s_d7_ch(-3)+td_p51s_d7_ch(-4)) ELSE IF (trim==2) THEN (td_p51s_d3(-2)+td_p51s_d3(-3)+td_p51s_d3(-4)+td_p51s_d3(-5))/(td_p51s_d7_ch(-2)+td_p51s_d7_ch(-3)+td_p51s_d7_ch(-4)+td_p51s_d7_ch(-5)) ELSE IF (trim==3) THEN (td_p51s_d3(-3)+td_p51s_d3(-4)+td_p51s_d3(-5)+td_p51s_d3(-6))/(td_p51s_d7_ch(-3)+td_p51s_d7_ch(-4)+td_p51s_d7_ch(-5)+td_p51s_d7_ch(-6)) ELSE (td_p51s_d3(-4)+td_p51s_d3(-5)+td_p51s_d3(-6)+td_p51s_d3(-7))/(td_p51s_d7_ch(-4)+td_p51s_d7_ch(-5)+td_p51s_d7_ch(-6)+td_p51s_d7_ch(-7))),
+td_p51s_dhfz0	: td_p51s_dhfz0	= (IF (trim==1) THEN (td_p51s_dhfz3(-1)+td_p51s_dhfz3(-2)+td_p51s_dhfz3(-3)+td_p51s_dhfz3(-4))/(td_p51s_dhfz7_ch(-1)+td_p51s_dhfz7_ch(-2)+td_p51s_dhfz7_ch(-3)+td_p51s_dhfz7_ch(-4)) ELSE IF (trim==2) THEN (td_p51s_dhfz3(-2)+td_p51s_dhfz3(-3)+td_p51s_dhfz3(-4)+td_p51s_dhfz3(-5))/(td_p51s_dhfz7_ch(-2)+td_p51s_dhfz7_ch(-3)+td_p51s_dhfz7_ch(-4)+td_p51s_dhfz7_ch(-5)) ELSE IF (trim==3) THEN (td_p51s_dhfz3(-3)+td_p51s_dhfz3(-4)+td_p51s_dhfz3(-5)+td_p51s_dhfz3(-6))/(td_p51s_dhfz7_ch(-3)+td_p51s_dhfz7_ch(-4)+td_p51s_dhfz7_ch(-5)+td_p51s_dhfz7_ch(-6)) ELSE (td_p51s_dhfz3(-4)+td_p51s_dhfz3(-5)+td_p51s_dhfz3(-6)+td_p51s_dhfz3(-7))/(td_p51s_dhfz7_ch(-4)+td_p51s_dhfz7_ch(-5)+td_p51s_dhfz7_ch(-6)+td_p51s_dhfz7_ch(-7))),
+td_p51s_fz0		: td_p51s_fz0	= (IF (trim==1) THEN (td_p51s_fz3(-1)+td_p51s_fz3(-2)+td_p51s_fz3(-3)+td_p51s_fz3(-4))/(td_p51s_fz7_ch(-1)+td_p51s_fz7_ch(-2)+td_p51s_fz7_ch(-3)+td_p51s_fz7_ch(-4)) ELSE IF (trim==2) THEN (td_p51s_fz3(-2)+td_p51s_fz3(-3)+td_p51s_fz3(-4)+td_p51s_fz3(-5))/(td_p51s_fz7_ch(-2)+td_p51s_fz7_ch(-3)+td_p51s_fz7_ch(-4)+td_p51s_fz7_ch(-5)) ELSE IF (trim==3) THEN (td_p51s_fz3(-3)+td_p51s_fz3(-4)+td_p51s_fz3(-5)+td_p51s_fz3(-6))/(td_p51s_fz7_ch(-3)+td_p51s_fz7_ch(-4)+td_p51s_fz7_ch(-5)+td_p51s_fz7_ch(-6)) ELSE (td_p51s_fz3(-4)+td_p51s_fz3(-5)+td_p51s_fz3(-6)+td_p51s_fz3(-7))/(td_p51s_fz7_ch(-4)+td_p51s_fz7_ch(-5)+td_p51s_fz7_ch(-6)+td_p51s_fz7_ch(-7))),
+td_p51b_d0	    : td_p51b_d0	= (IF (trim==1) THEN (td_p51b_d3(-1)+td_p51b_d3(-2)+td_p51b_d3(-3)+td_p51b_d3(-4))/(td_p51b_d7_ch(-1)+td_p51b_d7_ch(-2)+td_p51b_d7_ch(-3)+td_p51b_d7_ch(-4)) ELSE IF (trim==2) THEN (td_p51b_d3(-2)+td_p51b_d3(-3)+td_p51b_d3(-4)+td_p51b_d3(-5))/(td_p51b_d7_ch(-2)+td_p51b_d7_ch(-3)+td_p51b_d7_ch(-4)+td_p51b_d7_ch(-5)) ELSE IF (trim==3) THEN (td_p51b_d3(-3)+td_p51b_d3(-4)+td_p51b_d3(-5)+td_p51b_d3(-6))/(td_p51b_d7_ch(-3)+td_p51b_d7_ch(-4)+td_p51b_d7_ch(-5)+td_p51b_d7_ch(-6)) ELSE (td_p51b_d3(-4)+td_p51b_d3(-5)+td_p51b_d3(-6)+td_p51b_d3(-7))/(td_p51b_d7_ch(-4)+td_p51b_d7_ch(-5)+td_p51b_d7_ch(-6)+td_p51b_d7_ch(-7))),
+td_p51g_d0		: td_p51g_d0	= (IF (trim==1) THEN (td_p51g_d3(-1)+td_p51g_d3(-2)+td_p51g_d3(-3)+td_p51g_d3(-4))/(td_p51g_d7_ch(-1)+td_p51g_d7_ch(-2)+td_p51g_d7_ch(-3)+td_p51g_d7_ch(-4)) ELSE IF (trim==2) THEN (td_p51g_d3(-2)+td_p51g_d3(-3)+td_p51g_d3(-4)+td_p51g_d3(-5))/(td_p51g_d7_ch(-2)+td_p51g_d7_ch(-3)+td_p51g_d7_ch(-4)+td_p51g_d7_ch(-5)) ELSE IF (trim==3) THEN (td_p51g_d3(-3)+td_p51g_d3(-4)+td_p51g_d3(-5)+td_p51g_d3(-6))/(td_p51g_d7_ch(-3)+td_p51g_d7_ch(-4)+td_p51g_d7_ch(-5)+td_p51g_d7_ch(-6)) ELSE (td_p51g_d3(-4)+td_p51g_d3(-5)+td_p51g_d3(-6)+td_p51g_d3(-7))/(td_p51g_d7_ch(-4)+td_p51g_d7_ch(-5)+td_p51g_d7_ch(-6)+td_p51g_d7_ch(-7))),
+td_p51m_d0		: td_p51m_d0	= (IF (trim==1) THEN (td_p51m_d3(-1)+td_p51m_d3(-2)+td_p51m_d3(-3)+td_p51m_d3(-4))/(td_p51m_d7_ch(-1)+td_p51m_d7_ch(-2)+td_p51m_d7_ch(-3)+td_p51m_d7_ch(-4)) ELSE IF (trim==2) THEN (td_p51m_d3(-2)+td_p51m_d3(-3)+td_p51m_d3(-4)+td_p51m_d3(-5))/(td_p51m_d7_ch(-2)+td_p51m_d7_ch(-3)+td_p51m_d7_ch(-4)+td_p51m_d7_ch(-5)) ELSE IF (trim==3) THEN (td_p51m_d3(-3)+td_p51m_d3(-4)+td_p51m_d3(-5)+td_p51m_d3(-6))/(td_p51m_d7_ch(-3)+td_p51m_d7_ch(-4)+td_p51m_d7_ch(-5)+td_p51m_d7_ch(-6)) ELSE (td_p51m_d3(-4)+td_p51m_d3(-5)+td_p51m_d3(-6)+td_p51m_d3(-7))/(td_p51m_d7_ch(-4)+td_p51m_d7_ch(-5)+td_p51m_d7_ch(-6)+td_p51m_d7_ch(-7))),
+td_p51p_d0	    : td_p51p_d0	= (IF (trim==1) THEN (td_p51p_d3(-1)+td_p51p_d3(-2)+td_p51p_d3(-3)+td_p51p_d3(-4))/(td_p51p_d7_ch(-1)+td_p51p_d7_ch(-2)+td_p51p_d7_ch(-3)+td_p51p_d7_ch(-4)) ELSE IF (trim==2) THEN (td_p51p_d3(-2)+td_p51p_d3(-3)+td_p51p_d3(-4)+td_p51p_d3(-5))/(td_p51p_d7_ch(-2)+td_p51p_d7_ch(-3)+td_p51p_d7_ch(-4)+td_p51p_d7_ch(-5)) ELSE IF (trim==3) THEN (td_p51p_d3(-3)+td_p51p_d3(-4)+td_p51p_d3(-5)+td_p51p_d3(-6))/(td_p51p_d7_ch(-3)+td_p51p_d7_ch(-4)+td_p51p_d7_ch(-5)+td_p51p_d7_ch(-6)) ELSE (td_p51p_d3(-4)+td_p51p_d3(-5)+td_p51p_d3(-6)+td_p51p_d3(-7))/(td_p51p_d7_ch(-4)+td_p51p_d7_ch(-5)+td_p51p_d7_ch(-6)+td_p51p_d7_ch(-7))),
+
+td_p6_d0		: td_p6_d0		= (IF (trim==1) THEN (td_p6_d3(-1)+td_p6_d3(-2)+td_p6_d3(-3)+td_p6_d3(-4))/(td_p6_d7_ch(-1)+td_p6_d7_ch(-2)+td_p6_d7_ch(-3)+td_p6_d7_ch(-4)) ELSE IF (trim==2) THEN (td_p6_d3(-2)+td_p6_d3(-3)+td_p6_d3(-4)+td_p6_d3(-5))/(td_p6_d7_ch(-2)+td_p6_d7_ch(-3)+td_p6_d7_ch(-4)+td_p6_d7_ch(-5)) ELSE IF (trim==3) THEN (td_p6_d3(-3)+td_p6_d3(-4)+td_p6_d3(-5)+td_p6_d3(-6))/(td_p6_d7_ch(-3)+td_p6_d7_ch(-4)+td_p6_d7_ch(-5)+td_p6_d7_ch(-6)) ELSE (td_p6_d3(-4)+td_p6_d3(-5)+td_p6_d3(-6)+td_p6_d3(-7))/(td_p6_d7_ch(-4)+td_p6_d7_ch(-5)+td_p6_d7_ch(-6)+td_p6_d7_ch(-7))),
+td_p6_db0		: td_p6_db0		= (IF (trim==1) THEN (td_p6_db3(-1)+td_p6_db3(-2)+td_p6_db3(-3)+td_p6_db3(-4))/(td_p6_db7_ch(-1)+td_p6_db7_ch(-2)+td_p6_db7_ch(-3)+td_p6_db7_ch(-4)) ELSE IF (trim==2) THEN (td_p6_db3(-2)+td_p6_db3(-3)+td_p6_db3(-4)+td_p6_db3(-5))/(td_p6_db7_ch(-2)+td_p6_db7_ch(-3)+td_p6_db7_ch(-4)+td_p6_db7_ch(-5)) ELSE IF (trim==3) THEN (td_p6_db3(-3)+td_p6_db3(-4)+td_p6_db3(-5)+td_p6_db3(-6))/(td_p6_db7_ch(-3)+td_p6_db7_ch(-4)+td_p6_db7_ch(-5)+td_p6_db7_ch(-6)) ELSE (td_p6_db3(-4)+td_p6_db3(-5)+td_p6_db3(-6)+td_p6_db3(-7))/(td_p6_db7_ch(-4)+td_p6_db7_ch(-5)+td_p6_db7_ch(-6)+td_p6_db7_ch(-7))),
+td_p6_az0		: td_p6_az0		= (IF (trim==1) THEN (td_p6_az3(-1)+td_p6_az3(-2)+td_p6_az3(-3)+td_p6_az3(-4))/(td_p6_az7_ch(-1)+td_p6_az7_ch(-2)+td_p6_az7_ch(-3)+td_p6_az7_ch(-4)) ELSE IF (trim==2) THEN (td_p6_az3(-2)+td_p6_az3(-3)+td_p6_az3(-4)+td_p6_az3(-5))/(td_p6_az7_ch(-2)+td_p6_az7_ch(-3)+td_p6_az7_ch(-4)+td_p6_az7_ch(-5)) ELSE IF (trim==3) THEN (td_p6_az3(-3)+td_p6_az3(-4)+td_p6_az3(-5)+td_p6_az3(-6))/(td_p6_az7_ch(-3)+td_p6_az7_ch(-4)+td_p6_az7_ch(-5)+td_p6_az7_ch(-6)) ELSE (td_p6_az3(-4)+td_p6_az3(-5)+td_p6_az3(-6)+td_p6_az3(-7))/(td_p6_az7_ch(-4)+td_p6_az7_ch(-5)+td_p6_az7_ch(-6)+td_p6_az7_ch(-7))),
+td_p6_dim0		: td_p6_dim0	= (IF (trim==1) THEN (td_p6_dim3(-1)+td_p6_dim3(-2)+td_p6_dim3(-3)+td_p6_dim3(-4))/(td_p6_dim7_ch(-1)+td_p6_dim7_ch(-2)+td_p6_dim7_ch(-3)+td_p6_dim7_ch(-4)) ELSE IF (trim==2) THEN (td_p6_dim3(-2)+td_p6_dim3(-3)+td_p6_dim3(-4)+td_p6_dim3(-5))/(td_p6_dim7_ch(-2)+td_p6_dim7_ch(-3)+td_p6_dim7_ch(-4)+td_p6_dim7_ch(-5)) ELSE IF (trim==3) THEN (td_p6_dim3(-3)+td_p6_dim3(-4)+td_p6_dim3(-5)+td_p6_dim3(-6))/(td_p6_dim7_ch(-3)+td_p6_dim7_ch(-4)+td_p6_dim7_ch(-5)+td_p6_dim7_ch(-6)) ELSE (td_p6_dim3(-4)+td_p6_dim3(-5)+td_p6_dim3(-6)+td_p6_dim3(-7))/(td_p6_dim7_ch(-4)+td_p6_dim7_ch(-5)+td_p6_dim7_ch(-6)+td_p6_dim7_ch(-7))),
+td_p6_dimhc20	: td_p6_dimhc20	= (IF (trim==1) THEN (td_p6_dimhc23(-1)+td_p6_dimhc23(-2)+td_p6_dimhc23(-3)+td_p6_dimhc23(-4))/(td_p6_dimhc27_ch(-1)+td_p6_dimhc27_ch(-2)+td_p6_dimhc27_ch(-3)+td_p6_dimhc27_ch(-4)) ELSE IF (trim==2) THEN (td_p6_dimhc23(-2)+td_p6_dimhc23(-3)+td_p6_dimhc23(-4)+td_p6_dimhc23(-5))/(td_p6_dimhc27_ch(-2)+td_p6_dimhc27_ch(-3)+td_p6_dimhc27_ch(-4)+td_p6_dimhc27_ch(-5)) ELSE IF (trim==3) THEN (td_p6_dimhc23(-3)+td_p6_dimhc23(-4)+td_p6_dimhc23(-5)+td_p6_dimhc23(-6))/(td_p6_dimhc27_ch(-3)+td_p6_dimhc27_ch(-4)+td_p6_dimhc27_ch(-5)+td_p6_dimhc27_ch(-6)) ELSE (td_p6_dimhc23(-4)+td_p6_dimhc23(-5)+td_p6_dimhc23(-6)+td_p6_dimhc23(-7))/(td_p6_dimhc27_ch(-4)+td_p6_dimhc27_ch(-5)+td_p6_dimhc27_ch(-6)+td_p6_dimhc27_ch(-7))),
+td_p6_c20		: td_p6_c20		= (IF (trim==1) THEN (td_p6_c23(-1)+td_p6_c23(-2)+td_p6_c23(-3)+td_p6_c23(-4))/(td_p6_c27_ch(-1)+td_p6_c27_ch(-2)+td_p6_c27_ch(-3)+td_p6_c27_ch(-4)) ELSE IF (trim==2) THEN (td_p6_c23(-2)+td_p6_c23(-3)+td_p6_c23(-4)+td_p6_c23(-5))/(td_p6_c27_ch(-2)+td_p6_c27_ch(-3)+td_p6_c27_ch(-4)+td_p6_c27_ch(-5)) ELSE IF (trim==3) THEN (td_p6_c23(-3)+td_p6_c23(-4)+td_p6_c23(-5)+td_p6_c23(-6))/(td_p6_c27_ch(-3)+td_p6_c27_ch(-4)+td_p6_c27_ch(-5)+td_p6_c27_ch(-6)) ELSE (td_p6_c23(-4)+td_p6_c23(-5)+td_p6_c23(-6)+td_p6_c23(-7))/(td_p6_c27_ch(-4)+td_p6_c27_ch(-5)+td_p6_c27_ch(-6)+td_p6_c27_ch(-7))),
+td_p6_de0		: td_p6_de0		= (IF (trim==1) THEN (td_p6_de3(-1)+td_p6_de3(-2)+td_p6_de3(-3)+td_p6_de3(-4))/(td_p6_de7_ch(-1)+td_p6_de7_ch(-2)+td_p6_de7_ch(-3)+td_p6_de7_ch(-4)) ELSE IF (trim==2) THEN (td_p6_de3(-2)+td_p6_de3(-3)+td_p6_de3(-4)+td_p6_de3(-5))/(td_p6_de7_ch(-2)+td_p6_de7_ch(-3)+td_p6_de7_ch(-4)+td_p6_de7_ch(-5)) ELSE IF (trim==3) THEN (td_p6_de3(-3)+td_p6_de3(-4)+td_p6_de3(-5)+td_p6_de3(-6))/(td_p6_de7_ch(-3)+td_p6_de7_ch(-4)+td_p6_de7_ch(-5)+td_p6_de7_ch(-6)) ELSE (td_p6_de3(-4)+td_p6_de3(-5)+td_p6_de3(-6)+td_p6_de3(-7))/(td_p6_de7_ch(-4)+td_p6_de7_ch(-5)+td_p6_de7_ch(-6)+td_p6_de7_ch(-7))),
+td_p6_serv0		: td_p6_serv0	= (IF (trim==1) THEN (td_p6_serv3(-1)+td_p6_serv3(-2)+td_p6_serv3(-3)+td_p6_serv3(-4))/(td_p6_serv7_ch(-1)+td_p6_serv7_ch(-2)+td_p6_serv7_ch(-3)+td_p6_serv7_ch(-4)) ELSE IF (trim==2) THEN (td_p6_serv3(-2)+td_p6_serv3(-3)+td_p6_serv3(-4)+td_p6_serv3(-5))/(td_p6_serv7_ch(-2)+td_p6_serv7_ch(-3)+td_p6_serv7_ch(-4)+td_p6_serv7_ch(-5)) ELSE IF (trim==3) THEN (td_p6_serv3(-3)+td_p6_serv3(-4)+td_p6_serv3(-5)+td_p6_serv3(-6))/(td_p6_serv7_ch(-3)+td_p6_serv7_ch(-4)+td_p6_serv7_ch(-5)+td_p6_serv7_ch(-6)) ELSE (td_p6_serv3(-4)+td_p6_serv3(-5)+td_p6_serv3(-6)+td_p6_serv3(-7))/(td_p6_serv7_ch(-4)+td_p6_serv7_ch(-5)+td_p6_serv7_ch(-6)+td_p6_serv7_ch(-7))),
+td_p6_pchtr0	: td_p6_pchtr0	= (IF (trim==1) THEN (td_p6_pchtr3(-1)+td_p6_pchtr3(-2)+td_p6_pchtr3(-3)+td_p6_pchtr3(-4))/(td_p6_pchtr7_ch(-1)+td_p6_pchtr7_ch(-2)+td_p6_pchtr7_ch(-3)+td_p6_pchtr7_ch(-4)) ELSE IF (trim==2) THEN (td_p6_pchtr3(-2)+td_p6_pchtr3(-3)+td_p6_pchtr3(-4)+td_p6_pchtr3(-5))/(td_p6_pchtr7_ch(-2)+td_p6_pchtr7_ch(-3)+td_p6_pchtr7_ch(-4)+td_p6_pchtr7_ch(-5)) ELSE IF (trim==3) THEN (td_p6_pchtr3(-3)+td_p6_pchtr3(-4)+td_p6_pchtr3(-5)+td_p6_pchtr3(-6))/(td_p6_pchtr7_ch(-3)+td_p6_pchtr7_ch(-4)+td_p6_pchtr7_ch(-5)+td_p6_pchtr7_ch(-6)) ELSE (td_p6_pchtr3(-4)+td_p6_pchtr3(-5)+td_p6_pchtr3(-6)+td_p6_pchtr3(-7))/(td_p6_pchtr7_ch(-4)+td_p6_pchtr7_ch(-5)+td_p6_pchtr7_ch(-6)+td_p6_pchtr7_ch(-7))),
+td_p6_dhde0		: td_p6_dhde0 	= (IF (trim==1) THEN (td_p6_dhde3(-1)+td_p6_dhde3(-2)+td_p6_dhde3(-3)+td_p6_dhde3(-4))/(td_p6_dhde7_ch(-1)+td_p6_dhde7_ch(-2)+td_p6_dhde7_ch(-3)+td_p6_dhde7_ch(-4)) ELSE IF (trim==2) THEN (td_p6_dhde3(-2)+td_p6_dhde3(-3)+td_p6_dhde3(-4)+td_p6_dhde3(-5))/(td_p6_dhde7_ch(-2)+td_p6_dhde7_ch(-3)+td_p6_dhde7_ch(-4)+td_p6_dhde7_ch(-5)) ELSE IF (trim==3) THEN (td_p6_dhde3(-3)+td_p6_dhde3(-4)+td_p6_dhde3(-5)+td_p6_dhde3(-6))/(td_p6_dhde7_ch(-3)+td_p6_dhde7_ch(-4)+td_p6_dhde7_ch(-5)+td_p6_dhde7_ch(-6)) ELSE (td_p6_dhde3(-4)+td_p6_dhde3(-5)+td_p6_dhde3(-6)+td_p6_dhde3(-7))/(td_p6_dhde7_ch(-4)+td_p6_dhde7_ch(-5)+td_p6_dhde7_ch(-6)+td_p6_dhde7_ch(-7))),
+td_p6_dhdec20	: td_p6_dhdec20	= (IF (trim==1) THEN (td_p6_dhdec23(-1)+td_p6_dhdec23(-2)+td_p6_dhdec23(-3)+td_p6_dhdec23(-4))/(td_p6_dhdec27_ch(-1)+td_p6_dhdec27_ch(-2)+td_p6_dhdec27_ch(-3)+td_p6_dhdec27_ch(-4)) ELSE IF (trim==2) THEN (td_p6_dhdec23(-2)+td_p6_dhdec23(-3)+td_p6_dhdec23(-4)+td_p6_dhdec23(-5))/(td_p6_dhdec27_ch(-2)+td_p6_dhdec27_ch(-3)+td_p6_dhdec27_ch(-4)+td_p6_dhdec27_ch(-5)) ELSE IF (trim==3) THEN (td_p6_dhdec23(-3)+td_p6_dhdec23(-4)+td_p6_dhdec23(-5)+td_p6_dhdec23(-6))/(td_p6_dhdec27_ch(-3)+td_p6_dhdec27_ch(-4)+td_p6_dhdec27_ch(-5)+td_p6_dhdec27_ch(-6)) ELSE (td_p6_dhdec23(-4)+td_p6_dhdec23(-5)+td_p6_dhdec23(-6)+td_p6_dhdec23(-7))/(td_p6_dhdec27_ch(-4)+td_p6_dhdec27_ch(-5)+td_p6_dhdec27_ch(-6)+td_p6_dhdec27_ch(-7))),
+td_p6_dec20		: td_p6_dec20	= (IF (trim==1) THEN (td_p6_dec23(-1)+td_p6_dec23(-2)+td_p6_dec23(-3)+td_p6_dec23(-4))/(td_p6_dec27_ch(-1)+td_p6_dec27_ch(-2)+td_p6_dec27_ch(-3)+td_p6_dec27_ch(-4)) ELSE IF (trim==2) THEN (td_p6_dec23(-2)+td_p6_dec23(-3)+td_p6_dec23(-4)+td_p6_dec23(-5))/(td_p6_dec27_ch(-2)+td_p6_dec27_ch(-3)+td_p6_dec27_ch(-4)+td_p6_dec27_ch(-5)) ELSE IF (trim==3) THEN (td_p6_dec23(-3)+td_p6_dec23(-4)+td_p6_dec23(-5)+td_p6_dec23(-6))/(td_p6_dec27_ch(-3)+td_p6_dec27_ch(-4)+td_p6_dec27_ch(-5)+td_p6_dec27_ch(-6)) ELSE (td_p6_dec23(-4)+td_p6_dec23(-5)+td_p6_dec23(-6)+td_p6_dec23(-7))/(td_p6_dec27_ch(-4)+td_p6_dec27_ch(-5)+td_p6_dec27_ch(-6)+td_p6_dec27_ch(-7))),
+
+td_p7_d0		: td_p7_d0		= (IF (trim==1) THEN (td_p7_d3(-1)+td_p7_d3(-2)+td_p7_d3(-3)+td_p7_d3(-4))/(td_p7_d7_ch(-1)+td_p7_d7_ch(-2)+td_p7_d7_ch(-3)+td_p7_d7_ch(-4)) ELSE IF (trim==2) THEN (td_p7_d3(-2)+td_p7_d3(-3)+td_p7_d3(-4)+td_p7_d3(-5))/(td_p7_d7_ch(-2)+td_p7_d7_ch(-3)+td_p7_d7_ch(-4)+td_p7_d7_ch(-5)) ELSE IF (trim==3) THEN (td_p7_d3(-3)+td_p7_d3(-4)+td_p7_d3(-5)+td_p7_d3(-6))/(td_p7_d7_ch(-3)+td_p7_d7_ch(-4)+td_p7_d7_ch(-5)+td_p7_d7_ch(-6)) ELSE (td_p7_d3(-4)+td_p7_d3(-5)+td_p7_d3(-6)+td_p7_d3(-7))/(td_p7_d7_ch(-4)+td_p7_d7_ch(-5)+td_p7_d7_ch(-6)+td_p7_d7_ch(-7))),
+td_p7_db0		: td_p7_db0		= (IF (trim==1) THEN (td_p7_db3(-1)+td_p7_db3(-2)+td_p7_db3(-3)+td_p7_db3(-4))/(td_p7_db7_ch(-1)+td_p7_db7_ch(-2)+td_p7_db7_ch(-3)+td_p7_db7_ch(-4)) ELSE IF (trim==2) THEN (td_p7_db3(-2)+td_p7_db3(-3)+td_p7_db3(-4)+td_p7_db3(-5))/(td_p7_db7_ch(-2)+td_p7_db7_ch(-3)+td_p7_db7_ch(-4)+td_p7_db7_ch(-5)) ELSE IF (trim==3) THEN (td_p7_db3(-3)+td_p7_db3(-4)+td_p7_db3(-5)+td_p7_db3(-6))/(td_p7_db7_ch(-3)+td_p7_db7_ch(-4)+td_p7_db7_ch(-5)+td_p7_db7_ch(-6)) ELSE (td_p7_db3(-4)+td_p7_db3(-5)+td_p7_db3(-6)+td_p7_db3(-7))/(td_p7_db7_ch(-4)+td_p7_db7_ch(-5)+td_p7_db7_ch(-6)+td_p7_db7_ch(-7))),
+td_p7_dim0		: td_p7_dim0	= (IF (trim==1) THEN (td_p7_dim3(-1)+td_p7_dim3(-2)+td_p7_dim3(-3)+td_p7_dim3(-4))/(td_p7_dim7_ch(-1)+td_p7_dim7_ch(-2)+td_p7_dim7_ch(-3)+td_p7_dim7_ch(-4)) ELSE IF (trim==2) THEN (td_p7_dim3(-2)+td_p7_dim3(-3)+td_p7_dim3(-4)+td_p7_dim3(-5))/(td_p7_dim7_ch(-2)+td_p7_dim7_ch(-3)+td_p7_dim7_ch(-4)+td_p7_dim7_ch(-5)) ELSE IF (trim==3) THEN (td_p7_dim3(-3)+td_p7_dim3(-4)+td_p7_dim3(-5)+td_p7_dim3(-6))/(td_p7_dim7_ch(-3)+td_p7_dim7_ch(-4)+td_p7_dim7_ch(-5)+td_p7_dim7_ch(-6)) ELSE (td_p7_dim3(-4)+td_p7_dim3(-5)+td_p7_dim3(-6)+td_p7_dim3(-7))/(td_p7_dim7_ch(-4)+td_p7_dim7_ch(-5)+td_p7_dim7_ch(-6)+td_p7_dim7_ch(-7))),
+td_p7_dimhc20	: td_p7_dimhc20	= (IF (trim==1) THEN (td_p7_dimhc23(-1)+td_p7_dimhc23(-2)+td_p7_dimhc23(-3)+td_p7_dimhc23(-4))/(td_p7_dimhc27_ch(-1)+td_p7_dimhc27_ch(-2)+td_p7_dimhc27_ch(-3)+td_p7_dimhc27_ch(-4)) ELSE IF (trim==2) THEN (td_p7_dimhc23(-2)+td_p7_dimhc23(-3)+td_p7_dimhc23(-4)+td_p7_dimhc23(-5))/(td_p7_dimhc27_ch(-2)+td_p7_dimhc27_ch(-3)+td_p7_dimhc27_ch(-4)+td_p7_dimhc27_ch(-5)) ELSE IF (trim==3) THEN (td_p7_dimhc23(-3)+td_p7_dimhc23(-4)+td_p7_dimhc23(-5)+td_p7_dimhc23(-6))/(td_p7_dimhc27_ch(-3)+td_p7_dimhc27_ch(-4)+td_p7_dimhc27_ch(-5)+td_p7_dimhc27_ch(-6)) ELSE (td_p7_dimhc23(-4)+td_p7_dimhc23(-5)+td_p7_dimhc23(-6)+td_p7_dimhc23(-7))/(td_p7_dimhc27_ch(-4)+td_p7_dimhc27_ch(-5)+td_p7_dimhc27_ch(-6)+td_p7_dimhc27_ch(-7))),
+td_p7_c20		: td_p7_c20		= (IF (trim==1) THEN (td_p7_c23(-1)+td_p7_c23(-2)+td_p7_c23(-3)+td_p7_c23(-4))/(td_p7_c27_ch(-1)+td_p7_c27_ch(-2)+td_p7_c27_ch(-3)+td_p7_c27_ch(-4)) ELSE IF (trim==2) THEN (td_p7_c23(-2)+td_p7_c23(-3)+td_p7_c23(-4)+td_p7_c23(-5))/(td_p7_c27_ch(-2)+td_p7_c27_ch(-3)+td_p7_c27_ch(-4)+td_p7_c27_ch(-5)) ELSE IF (trim==3) THEN (td_p7_c23(-3)+td_p7_c23(-4)+td_p7_c23(-5)+td_p7_c23(-6))/(td_p7_c27_ch(-3)+td_p7_c27_ch(-4)+td_p7_c27_ch(-5)+td_p7_c27_ch(-6)) ELSE (td_p7_c23(-4)+td_p7_c23(-5)+td_p7_c23(-6)+td_p7_c23(-7))/(td_p7_c27_ch(-4)+td_p7_c27_ch(-5)+td_p7_c27_ch(-6)+td_p7_c27_ch(-7))),
+td_p7_serv0		: td_p7_serv0	= (IF (trim==1) THEN (td_p7_serv3(-1)+td_p7_serv3(-2)+td_p7_serv3(-3)+td_p7_serv3(-4))/(td_p7_serv7_ch(-1)+td_p7_serv7_ch(-2)+td_p7_serv7_ch(-3)+td_p7_serv7_ch(-4)) ELSE IF (trim==2) THEN (td_p7_serv3(-2)+td_p7_serv3(-3)+td_p7_serv3(-4)+td_p7_serv3(-5))/(td_p7_serv7_ch(-2)+td_p7_serv7_ch(-3)+td_p7_serv7_ch(-4)+td_p7_serv7_ch(-5)) ELSE IF (trim==3) THEN (td_p7_serv3(-3)+td_p7_serv3(-4)+td_p7_serv3(-5)+td_p7_serv3(-6))/(td_p7_serv7_ch(-3)+td_p7_serv7_ch(-4)+td_p7_serv7_ch(-5)+td_p7_serv7_ch(-6)) ELSE (td_p7_serv3(-4)+td_p7_serv3(-5)+td_p7_serv3(-6)+td_p7_serv3(-7))/(td_p7_serv7_ch(-4)+td_p7_serv7_ch(-5)+td_p7_serv7_ch(-6)+td_p7_serv7_ch(-7))),
+td_p7_de0		: td_p7_de0		= (IF (trim==1) THEN (td_p7_de3(-1)+td_p7_de3(-2)+td_p7_de3(-3)+td_p7_de3(-4))/(td_p7_de7_ch(-1)+td_p7_de7_ch(-2)+td_p7_de7_ch(-3)+td_p7_de7_ch(-4)) ELSE IF (trim==2) THEN (td_p7_de3(-2)+td_p7_de3(-3)+td_p7_de3(-4)+td_p7_de3(-5))/(td_p7_de7_ch(-2)+td_p7_de7_ch(-3)+td_p7_de7_ch(-4)+td_p7_de7_ch(-5)) ELSE IF (trim==3) THEN (td_p7_de3(-3)+td_p7_de3(-4)+td_p7_de3(-5)+td_p7_de3(-6))/(td_p7_de7_ch(-3)+td_p7_de7_ch(-4)+td_p7_de7_ch(-5)+td_p7_de7_ch(-6)) ELSE (td_p7_de3(-4)+td_p7_de3(-5)+td_p7_de3(-6)+td_p7_de3(-7))/(td_p7_de7_ch(-4)+td_p7_de7_ch(-5)+td_p7_de7_ch(-6)+td_p7_de7_ch(-7))),
+td_p7_pchtr0	: td_p7_pchtr0	= (IF (trim==1) THEN (td_p7_pchtr3(-1)+td_p7_pchtr3(-2)+td_p7_pchtr3(-3)+td_p7_pchtr3(-4))/(td_p7_pchtr7_ch(-1)+td_p7_pchtr7_ch(-2)+td_p7_pchtr7_ch(-3)+td_p7_pchtr7_ch(-4)) ELSE IF (trim==2) THEN (td_p7_pchtr3(-2)+td_p7_pchtr3(-3)+td_p7_pchtr3(-4)+td_p7_pchtr3(-5))/(td_p7_pchtr7_ch(-2)+td_p7_pchtr7_ch(-3)+td_p7_pchtr7_ch(-4)+td_p7_pchtr7_ch(-5)) ELSE IF (trim==3) THEN (td_p7_pchtr3(-3)+td_p7_pchtr3(-4)+td_p7_pchtr3(-5)+td_p7_pchtr3(-6))/(td_p7_pchtr7_ch(-3)+td_p7_pchtr7_ch(-4)+td_p7_pchtr7_ch(-5)+td_p7_pchtr7_ch(-6)) ELSE (td_p7_pchtr3(-4)+td_p7_pchtr3(-5)+td_p7_pchtr3(-6)+td_p7_pchtr3(-7))/(td_p7_pchtr7_ch(-4)+td_p7_pchtr7_ch(-5)+td_p7_pchtr7_ch(-6)+td_p7_pchtr7_ch(-7))),
+td_p7_az0		: td_p7_az0		= (IF (trim==1) THEN (td_p7_az3(-1)+td_p7_az3(-2)+td_p7_az3(-3)+td_p7_az3(-4))/(td_p7_az7_ch(-1)+td_p7_az7_ch(-2)+td_p7_az7_ch(-3)+td_p7_az7_ch(-4)) ELSE IF (trim==2) THEN (td_p7_az3(-2)+td_p7_az3(-3)+td_p7_az3(-4)+td_p7_az3(-5))/(td_p7_az7_ch(-2)+td_p7_az7_ch(-3)+td_p7_az7_ch(-4)+td_p7_az7_ch(-5)) ELSE IF (trim==3) THEN (td_p7_az3(-3)+td_p7_az3(-4)+td_p7_az3(-5)+td_p7_az3(-6))/(td_p7_az7_ch(-3)+td_p7_az7_ch(-4)+td_p7_az7_ch(-5)+td_p7_az7_ch(-6)) ELSE (td_p7_az3(-4)+td_p7_az3(-5)+td_p7_az3(-6)+td_p7_az3(-7))/(td_p7_az7_ch(-4)+td_p7_az7_ch(-5)+td_p7_az7_ch(-6)+td_p7_az7_ch(-7))),
+td_p7_dhde0		: td_p7_dhde0 	= (IF (trim==1) THEN (td_p7_dhde3(-1)+td_p7_dhde3(-2)+td_p7_dhde3(-3)+td_p7_dhde3(-4))/(td_p7_dhde7_ch(-1)+td_p7_dhde7_ch(-2)+td_p7_dhde7_ch(-3)+td_p7_dhde7_ch(-4)) ELSE IF (trim==2) THEN (td_p7_dhde3(-2)+td_p7_dhde3(-3)+td_p7_dhde3(-4)+td_p7_dhde3(-5))/(td_p7_dhde7_ch(-2)+td_p7_dhde7_ch(-3)+td_p7_dhde7_ch(-4)+td_p7_dhde7_ch(-5)) ELSE IF (trim==3) THEN (td_p7_dhde3(-3)+td_p7_dhde3(-4)+td_p7_dhde3(-5)+td_p7_dhde3(-6))/(td_p7_dhde7_ch(-3)+td_p7_dhde7_ch(-4)+td_p7_dhde7_ch(-5)+td_p7_dhde7_ch(-6)) ELSE (td_p7_dhde3(-4)+td_p7_dhde3(-5)+td_p7_dhde3(-6)+td_p7_dhde3(-7))/(td_p7_dhde7_ch(-4)+td_p7_dhde7_ch(-5)+td_p7_dhde7_ch(-6)+td_p7_dhde7_ch(-7))),
+td_p7_dhdec20	: td_p7_dhdec20	= (IF (trim==1) THEN (td_p7_dhdec23(-1)+td_p7_dhdec23(-2)+td_p7_dhdec23(-3)+td_p7_dhdec23(-4))/(td_p7_dhdec27_ch(-1)+td_p7_dhdec27_ch(-2)+td_p7_dhdec27_ch(-3)+td_p7_dhdec27_ch(-4)) ELSE IF (trim==2) THEN (td_p7_dhdec23(-2)+td_p7_dhdec23(-3)+td_p7_dhdec23(-4)+td_p7_dhdec23(-5))/(td_p7_dhdec27_ch(-2)+td_p7_dhdec27_ch(-3)+td_p7_dhdec27_ch(-4)+td_p7_dhdec27_ch(-5)) ELSE IF (trim==3) THEN (td_p7_dhdec23(-3)+td_p7_dhdec23(-4)+td_p7_dhdec23(-5)+td_p7_dhdec23(-6))/(td_p7_dhdec27_ch(-3)+td_p7_dhdec27_ch(-4)+td_p7_dhdec27_ch(-5)+td_p7_dhdec27_ch(-6)) ELSE (td_p7_dhdec23(-4)+td_p7_dhdec23(-5)+td_p7_dhdec23(-6)+td_p7_dhdec23(-7))/(td_p7_dhdec27_ch(-4)+td_p7_dhdec27_ch(-5)+td_p7_dhdec27_ch(-6)+td_p7_dhdec27_ch(-7))),
+td_p7_dec20		: td_p7_dec20	= (IF (trim==1) THEN (td_p7_dec23(-1)+td_p7_dec23(-2)+td_p7_dec23(-3)+td_p7_dec23(-4))/(td_p7_dec27_ch(-1)+td_p7_dec27_ch(-2)+td_p7_dec27_ch(-3)+td_p7_dec27_ch(-4)) ELSE IF (trim==2) THEN (td_p7_dec23(-2)+td_p7_dec23(-3)+td_p7_dec23(-4)+td_p7_dec23(-5))/(td_p7_dec27_ch(-2)+td_p7_dec27_ch(-3)+td_p7_dec27_ch(-4)+td_p7_dec27_ch(-5)) ELSE IF (trim==3) THEN (td_p7_dec23(-3)+td_p7_dec23(-4)+td_p7_dec23(-5)+td_p7_dec23(-6))/(td_p7_dec27_ch(-3)+td_p7_dec27_ch(-4)+td_p7_dec27_ch(-5)+td_p7_dec27_ch(-6)) ELSE (td_p7_dec23(-4)+td_p7_dec23(-5)+td_p7_dec23(-6)+td_p7_dec23(-7))/(td_p7_dec27_ch(-4)+td_p7_dec27_ch(-5)+td_p7_dec27_ch(-6)+td_p7_dec27_ch(-7))),
+
+//---------------------------------------------------------------------------------------------------------------------------------------
+// EQUATIONS DE CALCUL DES VOLUMES CHAINES AU PRIX DE L'ANNEE A-1:  VOLUME CHAINE * PRIX A-1 = VOLUME PRIX A-1 ***************
+
+td_pib7	 			: td_pib7_ch* td_pib0 = td_pib7 ,
+
+/* Autres agrégats ou variables */
+td_rnt_d7	 		: td_rnt_d7_ch * td_rnt_d0 =	td_rnt_d7,
+td_dint_d7	 		: td_dint_d7_ch * td_dint_d0 = td_dint_d7,
+td_pibhs7	 		: td_pibhs7_ch * td_pibhs0 = td_pibhs7 ,
+td_dinths_d7	 	: td_dinths_d7_ch * td_dinths_d0 = td_dinths_d7,
+td_dhs_d7	 		: td_dhs_d7_ch * td_dhs_d0 = td_dhs_d7,
+
+td_comext_d7	 	: td_comext_d7_ch * td_comext_d0 = td_comext_d7,
+td_dempub7	 		: td_dempub7_ch * td_dempub0 = td_dempub7,
+
+/* Approche offre : VA(B1), Consommation Intermédiaire (P2), production (P1) */
+td_p1e_d7	 		: td_p1e_d7_ch * td_p1e_d0 = td_p1e_d7,
+td_p1e_az7	 		: td_p1e_az7_ch * td_p1e_az0 = td_p1e_az7,
+td_p1e_bmna7		: td_p1e_bmna7_ch * td_p1e_bmna0 = td_p1e_bmna7,
+td_p1e_oq7	 		: td_p1e_oq7_ch * td_p1e_oq0 = td_p1e_oq7,
+
+td_p1e_bmnahj7		: td_p1e_bmnahj7_ch *td_p1e_bmnahj0 = td_p1e_bmnahj7,
+td_memp_bmna7   	: td_memp_bmna7_ch * td_memp_bmna0 = td_memp_bmna7,
+
+td_p1mi_d7	 		: td_p1mi_d7_ch * td_p1mi_d0 = td_p1mi_d7,
+td_p1mi_bmna7	 	: td_p1mi_bmna7_ch * td_p1mi_bmna0 = td_p1mi_bmna7,
+td_p1mi_bmnahj		: td_p1mi_bmnahj7_ch *td_p1mi_bmnahj0 = td_p1mi_bmnahj7,
+
+td_p2e_d7	 		: td_p2e_d7_ch*td_p2e_d0 = td_p2e_d7,
+td_p2e_az7 			: td_p2e_az7_ch*td_p2e_az0 = td_p2e_az7,
+td_p2e_bmna7		: td_p2e_bmna7_ch*td_p2e_bmna0 = td_p2e_bmna7,
+td_p2e_oq7 			: td_p2e_oq7_ch * td_p2e_oq0 = td_p2e_oq7,
+
+td_b1_d7 			: td_b1_d7_ch * td_b1_d0 = td_b1_d7 ,
+td_b1_az7 			: td_b1_az7_ch * td_b1_az0 = td_b1_az7 ,
+td_b1_bmna7	 		: td_b1_bmna7_ch * td_b1_bmna0 = td_b1_bmna7 ,
+td_b1_oq7	 		: td_b1_oq7_ch * td_b1_oq0 = td_b1_oq7 ,
+
+td_d231_d7	 		: td_d231_d7_ch * td_d231_d0 = td_d231_d7,
+
+/* Approche demande : Consommation finale (P3), FBCF et variations de stocks (P5), exports (P6) et imports (P7) */
+
+td_p3m_d7			: td_p3m_d7_ch * td_p3m_d0 = td_p3m_d7,
+td_p3g_d7			: td_p3g_d7_ch * td_p3g_d0 = td_p3g_d7,
+td_p3p_d7 			: td_p3p_d7_ch * td_p3p_d0 = td_p3p_d7,
+
+td_p5_d7	 		: td_p5_d7_ch * td_p5_d0 = td_p5_d7,
+td_p51_d7	 		: td_p51_d7_ch * td_p51_d0 = td_p51_d7 ,
+td_p51s_d7	 		: td_p51s_d7_ch * td_p51s_d0 = td_p51s_d7,
+td_p51s_dhfz7 		: td_p51s_dhfz7_ch * td_p51s_dhfz0 = td_p51s_dhfz7,
+td_p51s_fz7 		: td_p51s_fz7_ch * td_p51s_fz0 = td_p51s_fz7,
+td_p51b_d7 			: td_p51b_d7_ch * td_p51b_d0 = td_p51b_d7,
+td_p51g_d7			: td_p51g_d7_ch * td_p51g_d0 = td_p51g_d7,
+td_p51m_d7 			: td_p51m_d7_ch * td_p51m_d0 = td_p51m_d7,
+td_p51p_d7 			: td_p51p_d7_ch * td_p51p_d0 = td_p51p_d7,
+
+td_p6_d7	 		: td_p6_d7_ch * td_p6_d0 = td_p6_d7,
+td_p6_az7 			: td_p6_az7_ch * td_p6_az0 = td_p6_az7,
+td_p6_db7	 		: td_p6_db7_ch * td_p6_db0 = td_p6_db7,
+td_p6_dim7 			: td_p6_dim7_ch * td_p6_dim0 = td_p6_dim7,
+td_p6_dimhc27 		: td_p6_dimhc27_ch * td_p6_dimhc20 = td_p6_dimhc27,
+td_p6_c27 			: td_p6_c27_ch * td_p6_c20 = td_p6_c27,
+td_p6_de7 			: td_p6_de7_ch * td_p6_de0 = td_p6_de7,
+td_p6_serv7 		: td_p6_serv7_ch * td_p6_serv0 = td_p6_serv7,
+td_p6_pchtr7	 	: td_p6_pchtr7_ch * td_p6_pchtr0 = td_p6_pchtr7,
+td_p6_dhde7	 		: td_p6_dhde7_ch * td_p6_dhde0 = td_p6_dhde7,
+td_p6_dhdec27	 	: td_p6_dhdec27_ch * td_p6_dhdec20 = td_p6_dhdec27,
+td_p6_dec27	 		: td_p6_dec27_ch * td_p6_dec20 = td_p6_dec27,
+
+td_p7_d7	 		: td_p7_d7_ch * td_p7_d0 = td_p7_d7,
+td_p7_db7	 		: td_p7_db7_ch * td_p7_db0 = td_p7_db7,
+td_p7_az7 			: td_p7_az7_ch * td_p7_az0 = td_p7_az7,
+td_p7_dim7 			: td_p7_dim7_ch * td_p7_dim0 = td_p7_dim7,
+td_p7_dimhc27 		: td_p7_dimhc27_ch * td_p7_dimhc20 = td_p7_dimhc27,
+td_p7_c27 			: td_p7_c27_ch * td_p7_c20 = td_p7_c27,
+td_p7_de7 			: td_p7_de7_ch * td_p7_de0 = td_p7_de7,
+td_p7_serv7 		: td_p7_serv7_ch * td_p7_serv0 = td_p7_serv7,
+td_p7_pchtr7	 	: td_p7_pchtr7_ch * td_p7_pchtr0 = td_p7_pchtr7,
+td_p7_dhde7	 		: td_p7_dhde7_ch * td_p7_dhde0 = td_p7_dhde7,
+td_p7_dhdec27	 	: td_p7_dhdec27_ch * td_p7_dhdec20 = td_p7_dhdec27,
+td_p7_dec27	 		: td_p7_dec27_ch * td_p7_dec20 = td_p7_dec27,
+
+//---------------------------------------------------------------------------------------------------------------------------------------
+// EQUATIONS DE CALCUL DES PRIX : VOLUME CHAINE * PRIX CHAINE = VALEUR ***************
+// Le prix (ou la valeur) est obtenu via le volume et la valeur (ou le volume et le prix)
+
+td_pib3				: td_pib7_ch* (td_pib5_ch/100) = td_pib3 ,
+/* Autres agrégats ou variables */
+
+td_rnt_d3 			: td_rnt_d7_ch * (td_rnt_d5_ch/100) =	td_rnt_d3,
+td_dint_d3 			: td_dint_d7_ch * (td_dint_d5_ch/100) = td_dint_d3,
+td_pibhs3 			: td_pibhs7_ch * (td_pibhs5_ch/100) = td_pibhs3 ,
+td_dinths_d3		: td_dinths_d7_ch * (td_dinths_d5_ch/100) = td_dinths_d3,
+td_dhs_d3 			: td_dhs_d7_ch * (td_dhs_d5_ch/100) = td_dhs_d3,
+
+td_comext_d3 			: td_comext_d7_ch * (td_comext_d5_ch/100) = td_comext_d3,
+td_dempub3	 		: td_dempub7_ch * (td_dempub5_ch/100) = td_dempub3,
+
+/* Approche offre : VA(B1), Consommation Intermédiaire (P2), production (P1) */
+
+td_p1e_d3			: td_p1e_d7_ch * (td_p1e_d5_ch/100) = td_p1e_d3,
+td_p1e_az3	 		: td_p1e_az7_ch * (td_p1e_az5_ch/100) = td_p1e_az3,
+td_p1e_bmna3	 	: td_p1e_bmna7_ch * (td_p1e_bmna5_ch/100) = td_p1e_bmna3,
+td_p1e_oq3 			: td_p1e_oq7_ch * (td_p1e_oq5_ch/100) = td_p1e_oq3,
+
+td_p1e_bmnahj3		: td_p1e_bmnahj7_ch *(td_p1e_bmnahj5_ch/100) = td_p1e_bmnahj3,
+td_memp_bmna3	 	: td_memp_bmna7_ch * (td_memp_bmna5_ch/100) = td_memp_bmna3,
+
+td_p1mi_d3	 		: td_p1mi_d7_ch * (td_p1mi_d5_ch/100) = td_p1mi_d3,
+td_p1mi_bmna3	 	: td_p1mi_bmna7_ch * (td_p1mi_bmna5_ch/100) = td_p1mi_bmna3,
+td_p1mi_bmnahj3 	: td_p1mi_bmnahj7_ch *(td_p1mi_bmnahj5_ch/100) = td_p1mi_bmnahj3,
+
+td_p2e_d3 			: td_p2e_d3 = td_p2e_d7_ch*(td_p2e_d5_ch/100),
+td_p2e_az3			: td_p2e_az3 = td_p2e_az7_ch*(td_p2e_az5_ch/100), // L'équation suivante sert à calculer le prix de CI AZ, et non la valeur
+td_p2e_bmna3 		: td_p2e_bmna3 = td_p2e_bmna7_ch*(td_p2e_bmna5_ch/100),
+td_p2e_oq3 			: td_p2e_oq7_ch * (td_p2e_oq5_ch/100) = td_p2e_oq3,
+
+td_b1_d3 			: td_b1_d7_ch * (td_b1_d5_ch/100) = td_b1_d3 ,
+td_b1_az3 			: td_b1_az7_ch * (td_b1_az5_ch/100) = td_b1_az3 ,
+td_b1_bmna3 		: td_b1_bmna7_ch * (td_b1_bmna5_ch/100) = td_b1_bmna3 ,
+td_b1_oq3	 		: td_b1_oq7_ch * (td_b1_oq5_ch/100) = td_b1_oq3 ,
+
+td_d231_d3			: td_d231_d7_ch * (td_d231_d5_ch/100) = td_d231_d3,
+
+/* Approche demande : Consommation finale (P3), FBCF et variations de stocks (P5), exports (P6) et imports (P7) */
+
+td_p3m_d3			: td_p3m_d7_ch * (td_p3m_d5_ch/100) = td_p3m_d3,
+td_p3g_d3			: td_p3g_d7_ch * (td_p3g_d5_ch/100) = td_p3g_d3,
+td_p3p_d3 			: td_p3p_d7_ch * (td_p3p_d5_ch/100) = td_p3p_d3,
+
+td_p5_d3	 		: td_p5_d7_ch * (td_p5_d5_ch/100) = td_p5_d3, // Nouveauté base 2010
+td_p51g_d3			: td_p51g_d7_ch * (td_p51g_d5_ch/100) = td_p51g_d3,
+td_p51_d3			: td_p51_d7_ch * (td_p51_d5_ch/100) = td_p51_d3,
+td_p51s_d3	 		: td_p51s_d7_ch * (td_p51s_d5_ch/100) = td_p51s_d3,
+td_p51s_dhfz3 		: td_p51s_dhfz7_ch * (td_p51s_dhfz5_ch/100) = td_p51s_dhfz3,
+td_p51s_fz3 		: td_p51s_fz7_ch * (td_p51s_fz5_ch/100) = td_p51s_fz3,
+td_p51b_d3	 		: td_p51b_d7_ch * (td_p51b_d5_ch/100) = td_p51b_d3,
+td_p51m_d3 			: td_p51m_d7_ch * (td_p51m_d5_ch/100) = td_p51m_d3,
+td_p51p_d3 			: td_p51p_d7_ch * (td_p51p_d5_ch/100) = td_p51p_d3,
+
+td_p6_d3	 		: td_p6_d7_ch * (td_p6_d5_ch/100) = td_p6_d3,
+td_p6_db3	 		: td_p6_db7_ch * (td_p6_db5_ch/100) = td_p6_db3,
+td_p6_dim3 			: td_p6_dim7_ch * (td_p6_dim5_ch/100) = td_p6_dim3,
+td_p6_dimhc23 		: td_p6_dimhc27_ch * (td_p6_dimhc25_ch/100) = td_p6_dimhc23,
+td_p6_c23 			: td_p6_c27_ch * (td_p6_c25_ch/100) = td_p6_c23,
+td_p6_de3 			: td_p6_de7_ch * (td_p6_de5_ch/100) = td_p6_de3,
+td_p6_serv3 		: td_p6_serv7_ch * (td_p6_serv5_ch/100) = td_p6_serv3,
+td_p6_az3 			: td_p6_az7_ch * (td_p6_az5_ch/100) = td_p6_az3,
+td_p6_pchtr3	 	: td_p6_pchtr7_ch * (td_p6_pchtr5_ch/100) = td_p6_pchtr3,
+td_p6_dhde3 		: td_p6_dhde7_ch * (td_p6_dhde5_ch/100) = td_p6_dhde3,
+td_p6_dhdec23	 	: td_p6_dhdec27_ch * (td_p6_dhdec25_ch/100) = td_p6_dhdec23,
+td_p6_dec23	 		: td_p6_dec27_ch * (td_p6_dec25_ch/100) = td_p6_dec23,
+
+td_p7_d3	 		: td_p7_d7_ch * (td_p7_d5_ch/100) = td_p7_d3,
+td_p7_az3 			: td_p7_az7_ch * (td_p7_az5_ch/100) = td_p7_az3,
+td_p7_db3	 		: td_p7_db7_ch * (td_p7_db5_ch/100) = td_p7_db3,
+td_p7_dim3 			: td_p7_dim7_ch * (td_p7_dim5_ch/100) = td_p7_dim3,
+td_p7_dimhc23 		: td_p7_dimhc27_ch * (td_p7_dimhc25_ch/100) = td_p7_dimhc23,
+td_p7_c23 			: td_p7_c27_ch * (td_p7_c25_ch/100) = td_p7_c23,
+td_p7_de3 			: td_p7_de7_ch * (td_p7_de5_ch/100) = td_p7_de3,
+td_p7_serv3 		: td_p7_serv7_ch * (td_p7_serv5_ch/100) = td_p7_serv3,
+td_p7_pchtr3		: td_p7_pchtr7_ch * (td_p7_pchtr5_ch/100) = td_p7_pchtr3,
+td_p7_dhde3 		: td_p7_dhde7_ch * (td_p7_dhde5_ch/100) = td_p7_dhde3,
+td_p7_dhdec23	 	: td_p7_dhdec27_ch * (td_p7_dhdec25_ch/100) = td_p7_dhdec23,
+td_p7_dec23	 		: td_p7_dec27_ch * (td_p7_dec25_ch/100) = td_p7_dec23,
+
+//---------------------------------------------------------------------------------------------------------------------------------------
+// RATIO PIB / PIB hors stocks
+
+
+p523_d3_log_ratio 		: p523_d3_log_ratio	= LOG(td_pib3) - LOG(td_pibhs3),        
+p523_d5_log_ratio	 	: p523_d5_log_ratio	= LOG(td_pib5_ch) - LOG(td_pibhs5_ch),
+p523_d7_log_ratio	 	: p523_d7_log_ratio	= LOG(td_pib7_ch) - LOG(td_pibhs7_ch),   
+
+//---------------------------------------------------------------------------------------------------------------------------------------
+// CONTRIBUTIONS AU PIB TRIMESTRIELLES
+
+// Contributions à la croissance du PIB en VALEUR
+contpib3_td_pib			: contpib3_td_pib   =   100 * ( td_pib3 - td_pib3(-1) ) / td_pib3(-1),
+
+contpib3_td_dint_d		: contpib3_td_dint_d   =   100 * ( td_dint_d3 - td_dint_d3(-1) ) / td_pib3(-1),
+contpib3_td_dinths_d	: contpib3_td_dinths_d   =   100 * ( td_dinths_d3 - td_dinths_d3(-1) ) / td_pib3(-1),
+
+contpib3_td_p3g_d   	: contpib3_td_p3g_d =   100 * ( td_p3g_d3 - td_p3g_d3(-1) ) / td_pib3(-1),
+contpib3_td_p3m_d   	: contpib3_td_p3m_d =   100 * ( td_p3m_d3 - td_p3m_d3(-1) ) / td_pib3(-1),
+contpib3_td_p3p_d   	: contpib3_td_p3p_d =   100 * ( td_p3p_d3 - td_p3p_d3(-1) ) / td_pib3(-1),
+
+contpib3_td_p51_d  	 	: contpib3_td_p51_d  =   100 * ( td_p51_d3 - td_p51_d3(-1) ) / td_pib3(-1),
+contpib3_td_p51s_d 		: contpib3_td_p51s_d =   100 * ( td_p51s_d3 - td_p51s_d3(-1) ) / td_pib3(-1),
+contpib3_td_p51b_d  	: contpib3_td_p51b_d =   100 * ( td_p51b_d3 - td_p51b_d3(-1) ) / td_pib3(-1),
+contpib3_td_p51s_dhfz 	: contpib3_td_p51s_dhfz =   100 * ( td_p51s_dhfz3 - td_p51s_dhfz3(-1) ) / td_pib3(-1),
+contpib3_td_p51s_fz 	: contpib3_td_p51s_fz =   100 * ( td_p51s_fz3 - td_p51s_fz3(-1) ) / td_pib3(-1),
+contpib3_td_p51g_d  	: contpib3_td_p51g_d =   100 * ( td_p51g_d3 - td_p51g_d3(-1) ) / td_pib3(-1),
+contpib3_td_p51m_d  	: contpib3_td_p51m_d =   100 * ( td_p51m_d3 - td_p51m_d3(-1) ) / td_pib3(-1),
+contpib3_td_p51p_d  	: contpib3_td_p51p_d =   100 * ( td_p51p_d3 - td_p51p_d3(-1) ) / td_pib3(-1),
+
+contpib3_td_p523_d  	: contpib3_td_p523_d =     contpib3_td_pib - contpib3_td_p7_d - contpib3_td_p6_d
+                                   - contpib3_td_p51s_d - contpib3_td_p51b_d - contpib3_td_p51m_d - contpib3_td_p51g_d  - contpib3_td_p51p_d
+			                       - contpib3_td_p3m_d - contpib3_td_p3g_d - contpib3_td_p3p_d,
+
+contpib3_td_p6_d   		: contpib3_td_p6_d		=    100 * ( td_p6_d3 - td_p6_d3(-1) ) / td_pib3(-1),
+contpib3_td_p6_az  		: contpib3_td_p6_az		=    100 * ( td_p6_az3 - td_p6_az3(-1) ) / td_pib3(-1),
+contpib3_td_p6_dim 		: contpib3_td_p6_dim 	=    100 * ( td_p6_dim3 - td_p6_dim3(-1) ) / td_pib3(-1),
+contpib3_td_p6_de  		: contpib3_td_p6_de		=    100 * ( td_p6_de3 - td_p6_de3(-1) ) / td_pib3(-1),
+contpib3_td_p6_serv		: contpib3_td_p6_serv	=    100 * ( td_p6_serv3 - td_p6_serv3(-1) ) / td_pib3(-1),
+contpib3_td_p6_pchtr	: contpib3_td_p6_pchtr	=    100 * ( td_p6_pchtr3 - td_p6_pchtr3(-1) ) / td_pib3(-1),
+
+contpib3_td_p7_d   		: contpib3_td_p7_d 		=   -100 * ( td_p7_d3 - td_p7_d3(-1) ) / td_pib3(-1),
+contpib3_td_p7_az  		: contpib3_td_p7_az		=    -100 * ( td_p7_az3 - td_p7_az3(-1) ) / td_pib3(-1),
+contpib3_td_p7_dim 		: contpib3_td_p7_dim 	=    -100 * ( td_p7_dim3 - td_p7_dim3(-1) ) / td_pib3(-1),
+contpib3_td_p7_de  		: contpib3_td_p7_de		=    -100 * ( td_p7_de3 - td_p7_de3(-1) ) / td_pib3(-1),
+contpib3_td_p7_serv		: contpib3_td_p7_serv	=    -100 * ( td_p7_serv3 - td_p7_serv3(-1) ) / td_pib3(-1),
+contpib3_td_p7_pchtr	: contpib3_td_p7_pchtr	=    -100 * ( td_p7_pchtr3 - td_p7_pchtr3(-1) ) / td_pib3(-1),
+
+contpib3_td_b1_d 	  	: contpib3_td_b1_d		=   100 * ( td_b1_d3 - td_b1_d3(-1) ) / td_pib3(-1),
+contpib3_td_b1_az   	: contpib3_td_b1_az   	=   100 * ( td_b1_az3 - td_b1_az3(-1) ) / td_pib3(-1),
+contpib3_td_b1_bmna 	: contpib3_td_b1_bmna 	=   100 * ( td_b1_bmna3 - td_b1_bmna3(-1) ) / td_pib3(-1),
+contpib3_td_b1_oq   	: contpib3_td_b1_oq   	=   100 * ( td_b1_oq3 - td_b1_oq3(-1) ) / td_pib3(-1),
+contpib3_td_d231_d  	: contpib3_td_d231_d  	=   100 * ( td_d231_d3 - td_d231_d3(-1) ) / td_pib3(-1),
+
+contpib3_td_p1e_bmnahj	: contpib3_td_p1e_bmnahj =  100 * ( td_p1e_bmnahj3 - td_p1e_bmnahj3(-1) ) / td_pib3(-1),
+contpib3_td_memp_bmna	: contpib3_td_memp_bmna  =  100 * ( td_memp_bmna3 - td_memp_bmna3(-1) ) / td_pib3(-1),
+contpib3_td_p2e_bmna	: contpib3_td_p2e_bmna	 = -100 * ( td_p2e_bmna3 - td_p2e_bmna3(-1) ) / td_pib3(-1),
+
+contpib3_td_comext_d		: contpib3_td_comext_d =  contpib3_td_p6_d + contpib3_td_p7_d,
+contpib3_td_dempub		: contpib3_td_dempub =  contpib3_td_p3g_d + contpib3_td_p51g_d,
+
+
+// Contributions à la croissance du PIB en VOLUME
+contpib7_td_pib     	: contpib7_td_pib   = (IF (trim==1) THEN  100 * ((td_pib7/td_pib0) - (td_pib7/td_pib0)(-1))* 1/td_pib7_ch(-1) -100 * ((td_pib0/td_pib0) - (td_pib0/td_pib0)(-1))*(td_pib7_ch(-1)+td_pib7_ch(-2)+td_pib7_ch(-3)+td_pib7_ch(-4))/(td_pib7_ch(-1)+td_pib7_ch(-2)+td_pib7_ch(-3)+td_pib7_ch(-4))
+                                           ELSE               100 * ((td_pib7/td_pib0) - (td_pib7/td_pib0)(-1))* 1/td_pib7_ch(-1)   ),
+
+contpib7_td_dint_d   	: contpib7_td_dint_d = (IF (trim==1) THEN  100 * ((td_dint_d7/td_pib0) - (td_dint_d7/td_pib0)(-1))* 1/td_pib7_ch(-1) -100 * ((td_dint_d0/td_pib0) - (td_dint_d0/td_pib0)(-1))*(td_dint_d7_ch(-1)+td_dint_d7_ch(-2)+td_dint_d7_ch(-3)+td_dint_d7_ch(-4))/(td_pib7_ch(-1)+td_pib7_ch(-2)+td_pib7_ch(-3)+td_pib7_ch(-4))
+                                           ELSE               100 * ((td_dint_d7/td_pib0) - (td_dint_d7/td_pib0)(-1))* 1/td_pib7_ch(-1)  ),
+
+contpib7_td_dinths_d  	: contpib7_td_dinths_d = (IF (trim==1) THEN  100 * ((td_dinths_d7/td_pib0) - (td_dinths_d7/td_pib0)(-1))* 1/td_pib7_ch(-1) -100 * ((td_dinths_d0/td_pib0) - (td_dinths_d0/td_pib0)(-1))*(td_dinths_d7_ch(-1)+td_dinths_d7_ch(-2)+td_dinths_d7_ch(-3)+td_dinths_d7_ch(-4))/(td_pib7_ch(-1)+td_pib7_ch(-2)+td_pib7_ch(-3)+td_pib7_ch(-4))
+                                           ELSE               100 * ((td_dinths_d7/td_pib0) - (td_dinths_d7/td_pib0)(-1))* 1/td_pib7_ch(-1)  ),
+
+contpib7_td_p3g_d  		: contpib7_td_p3g_d  = (IF (trim==1) THEN  100 * ((td_p3g_d7/td_pib0) - (td_p3g_d7/td_pib0)(-1))* 1/td_pib7_ch(-1) -100 * ((td_p3g_d0/td_pib0) - (td_p3g_d0/td_pib0)(-1))*(td_p3g_d7_ch(-1)+td_p3g_d7_ch(-2)+td_p3g_d7_ch(-3)+td_p3g_d7_ch(-4))/(td_pib7_ch(-1)+td_pib7_ch(-2)+td_pib7_ch(-3)+td_pib7_ch(-4))
+                                           ELSE               100 * ((td_p3g_d7/td_pib0) - (td_p3g_d7/td_pib0)(-1))* 1/td_pib7_ch(-1)  ),
+contpib7_td_p3m_d   	: contpib7_td_p3m_d  = (IF (trim==1) THEN  100 * ((td_p3m_d7/td_pib0) - (td_p3m_d7/td_pib0)(-1))* 1/td_pib7_ch(-1) -100 * ((td_p3m_d0/td_pib0) - (td_p3m_d0/td_pib0)(-1))*(td_p3m_d7_ch(-1)+td_p3m_d7_ch(-2)+td_p3m_d7_ch(-3)+td_p3m_d7_ch(-4))/(td_pib7_ch(-1)+td_pib7_ch(-2)+td_pib7_ch(-3)+td_pib7_ch(-4))
+                                            ELSE               100 * ((td_p3m_d7/td_pib0) - (td_p3m_d7/td_pib0)(-1))* 1/td_pib7_ch(-1)  ),
+contpib7_td_p3p_d   	: contpib7_td_p3p_d  = (IF (trim==1) THEN  100 * ((td_p3p_d7/td_pib0) - (td_p3p_d7/td_pib0)(-1))* 1/td_pib7_ch(-1) -100 * ((td_p3p_d0/td_pib0) - (td_p3p_d0/td_pib0)(-1))*(td_p3p_d7_ch(-1)+td_p3p_d7_ch(-2)+td_p3p_d7_ch(-3)+td_p3p_d7_ch(-4))/(td_pib7_ch(-1)+td_pib7_ch(-2)+td_pib7_ch(-3)+td_pib7_ch(-4))
+                                            ELSE               100 * ((td_p3p_d7/td_pib0) - (td_p3p_d7/td_pib0)(-1))* 1/td_pib7_ch(-1)  ),
+
+contpib7_td_p51_d   	: contpib7_td_p51_d  = (IF (trim==1) THEN  100 * ((td_p51_d7/td_pib0) - (td_p51_d7/td_pib0)(-1))* 1/td_pib7_ch(-1) -100 * ((td_p51_d0/td_pib0) - (td_p51_d0/td_pib0)(-1))*(td_p51_d7_ch(-1)+td_p51_d7_ch(-2)+td_p51_d7_ch(-3)+td_p51_d7_ch(-4))/(td_pib7_ch(-1)+td_pib7_ch(-2)+td_pib7_ch(-3)+td_pib7_ch(-4))
+                                            ELSE               100 * ((td_p51_d7/td_pib0) - (td_p51_d7/td_pib0)(-1))* 1/td_pib7_ch(-1)  ),
+contpib7_td_p51s_d  	: contpib7_td_p51s_d = (IF (trim==1) THEN  100 * ((td_p51s_d7/td_pib0) - (td_p51s_d7/td_pib0)(-1))* 1/td_pib7_ch(-1) -100 * ((td_p51s_d0/td_pib0) - (td_p51s_d0/td_pib0)(-1))*(td_p51s_d7_ch(-1)+td_p51s_d7_ch(-2)+td_p51s_d7_ch(-3)+td_p51s_d7_ch(-4))/(td_pib7_ch(-1)+td_pib7_ch(-2)+td_pib7_ch(-3)+td_pib7_ch(-4))
+                                            ELSE               100 * ((td_p51s_d7/td_pib0) - (td_p51s_d7/td_pib0)(-1))* 1/td_pib7_ch(-1)  ),
+contpib7_td_p51s_dhfz  	: contpib7_td_p51s_dhfz = (IF (trim==1) THEN  100 * ((td_p51s_dhfz7/td_pib0) - (td_p51s_dhfz7/td_pib0)(-1))* 1/td_pib7_ch(-1) -100 * ((td_p51s_dhfz0/td_pib0) - (td_p51s_dhfz0/td_pib0)(-1))*(td_p51s_dhfz7_ch(-1)+td_p51s_dhfz7_ch(-2)+td_p51s_dhfz7_ch(-3)+td_p51s_dhfz7_ch(-4))/(td_pib7_ch(-1)+td_pib7_ch(-2)+td_pib7_ch(-3)+td_pib7_ch(-4))
+                                            ELSE               100 * ((td_p51s_dhfz7/td_pib0) - (td_p51s_dhfz7/td_pib0)(-1))* 1/td_pib7_ch(-1)  ),
+contpib7_td_p51s_fz  	: contpib7_td_p51s_fz = (IF (trim==1) THEN  100 * ((td_p51s_fz7/td_pib0) - (td_p51s_fz7/td_pib0)(-1))* 1/td_pib7_ch(-1) -100 * ((td_p51s_fz0/td_pib0) - (td_p51s_fz0/td_pib0)(-1))*(td_p51s_fz7_ch(-1)+td_p51s_fz7_ch(-2)+td_p51s_fz7_ch(-3)+td_p51s_fz7_ch(-4))/(td_pib7_ch(-1)+td_pib7_ch(-2)+td_pib7_ch(-3)+td_pib7_ch(-4))
+                                            ELSE               100 * ((td_p51s_fz7/td_pib0) - (td_p51s_fz7/td_pib0)(-1))* 1/td_pib7_ch(-1)  ),
+contpib7_td_p51b_d 		: contpib7_td_p51b_d = (IF (trim==1) THEN  100 * ((td_p51b_d7/td_pib0) - (td_p51b_d7/td_pib0)(-1))* 1/td_pib7_ch(-1) -100 * ((td_p51b_d0/td_pib0) - (td_p51b_d0/td_pib0)(-1))*(td_p51b_d7_ch(-1)+td_p51b_d7_ch(-2)+td_p51b_d7_ch(-3)+td_p51b_d7_ch(-4))/(td_pib7_ch(-1)+td_pib7_ch(-2)+td_pib7_ch(-3)+td_pib7_ch(-4))
+                                            ELSE               100 * ((td_p51b_d7/td_pib0) - (td_p51b_d7/td_pib0)(-1))* 1/td_pib7_ch(-1)  ),
+contpib7_td_p51g_d  	: contpib7_td_p51g_d = (IF (trim==1) THEN  100 * ((td_p51g_d7/td_pib0) - (td_p51g_d7/td_pib0)(-1))* 1/td_pib7_ch(-1) -100 * ((td_p51g_d0/td_pib0) - (td_p51g_d0/td_pib0)(-1))*(td_p51g_d7_ch(-1)+td_p51g_d7_ch(-2)+td_p51g_d7_ch(-3)+td_p51g_d7_ch(-4))/(td_pib7_ch(-1)+td_pib7_ch(-2)+td_pib7_ch(-3)+td_pib7_ch(-4))
+                                            ELSE               100 * ((td_p51g_d7/td_pib0) - (td_p51g_d7/td_pib0)(-1))* 1/td_pib7_ch(-1)  ),
+contpib7_td_p51m_d 		: contpib7_td_p51m_d = (IF (trim==1) THEN  100 * ((td_p51m_d7/td_pib0) - (td_p51m_d7/td_pib0)(-1))* 1/td_pib7_ch(-1) -100 * ((td_p51m_d0/td_pib0) - (td_p51m_d0/td_pib0)(-1))*(td_p51m_d7_ch(-1)+td_p51m_d7_ch(-2)+td_p51m_d7_ch(-3)+td_p51m_d7_ch(-4))/(td_pib7_ch(-1)+td_pib7_ch(-2)+td_pib7_ch(-3)+td_pib7_ch(-4))
+                                            ELSE               100 * ((td_p51m_d7/td_pib0) - (td_p51m_d7/td_pib0)(-1))* 1/td_pib7_ch(-1)  ),
+contpib7_td_p51p_d  	: contpib7_td_p51p_d = (IF (trim==1) THEN  100 * ((td_p51p_d7/td_pib0) - (td_p51p_d7/td_pib0)(-1))* 1/td_pib7_ch(-1) -100 * ((td_p51p_d0/td_pib0) - (td_p51p_d0/td_pib0)(-1))*(td_p51p_d7_ch(-1)+td_p51p_d7_ch(-2)+td_p51p_d7_ch(-3)+td_p51p_d7_ch(-4))/(td_pib7_ch(-1)+td_pib7_ch(-2)+td_pib7_ch(-3)+td_pib7_ch(-4))
+                                            ELSE               100 * ((td_p51p_d7/td_pib0) - (td_p51p_d7/td_pib0)(-1))* 1/td_pib7_ch(-1)  ),
+
+contpib7_td_p523_d  	: contpib7_td_p523_d =    contpib7_td_pib - contpib7_td_p7_d - contpib7_td_p6_d
+                                            - contpib7_td_p51s_d - contpib7_td_p51b_d - contpib7_td_p51m_d - contpib7_td_p51g_d  - contpib7_td_p51p_d
+			                                - contpib7_td_p3m_d - contpib7_td_p3g_d - contpib7_td_p3p_d,
+
+contpib7_td_p6_d    	: contpib7_td_p6_d = 	(IF (trim==1) THEN 100 * ((td_p6_d7/td_pib0) - (td_p6_d7/td_pib0)(-1))* 1/td_pib7_ch(-1) -100 * ((td_p6_d0/td_pib0) - (td_p6_d0/td_pib0)(-1))*(td_p6_d7_ch(-1)+td_p6_d7_ch(-2)+td_p6_d7_ch(-3)+td_p6_d7_ch(-4))/(td_pib7_ch(-1)+td_pib7_ch(-2)+td_pib7_ch(-3)+td_pib7_ch(-4))
+                                         		ELSE               100 * ((td_p6_d7/td_pib0) - (td_p6_d7/td_pib0)(-1))* 1/td_pib7_ch(-1)  ),
+contpib7_td_p6_az    	: contpib7_td_p6_az = 	(IF (trim==1) THEN 100 * ((td_p6_az7/td_pib0) - (td_p6_az7/td_pib0)(-1))* 1/td_pib7_ch(-1) -100 * ((td_p6_az0/td_pib0) - (td_p6_az0/td_pib0)(-1))*(td_p6_az7_ch(-1)+td_p6_az7_ch(-2)+td_p6_az7_ch(-3)+td_p6_az7_ch(-4))/(td_pib7_ch(-1)+td_pib7_ch(-2)+td_pib7_ch(-3)+td_pib7_ch(-4))
+                                         		ELSE               100 * ((td_p6_az7/td_pib0) - (td_p6_az7/td_pib0)(-1))* 1/td_pib7_ch(-1)  ),
+contpib7_td_p6_dim    	: contpib7_td_p6_dim = 	(IF (trim==1) THEN 100 * ((td_p6_dim7/td_pib0) - (td_p6_dim7/td_pib0)(-1))* 1/td_pib7_ch(-1) -100 * ((td_p6_dim0/td_pib0) - (td_p6_dim0/td_pib0)(-1))*(td_p6_dim7_ch(-1)+td_p6_dim7_ch(-2)+td_p6_dim7_ch(-3)+td_p6_dim7_ch(-4))/(td_pib7_ch(-1)+td_pib7_ch(-2)+td_pib7_ch(-3)+td_pib7_ch(-4))
+                                         		ELSE               100 * ((td_p6_dim7/td_pib0) - (td_p6_dim7/td_pib0)(-1))* 1/td_pib7_ch(-1)  ),
+contpib7_td_p6_de    	: contpib7_td_p6_de = 	(IF (trim==1) THEN 100 * ((td_p6_de7/td_pib0) - (td_p6_de7/td_pib0)(-1))* 1/td_pib7_ch(-1) -100 * ((td_p6_de0/td_pib0) - (td_p6_de0/td_pib0)(-1))*(td_p6_de7_ch(-1)+td_p6_de7_ch(-2)+td_p6_de7_ch(-3)+td_p6_de7_ch(-4))/(td_pib7_ch(-1)+td_pib7_ch(-2)+td_pib7_ch(-3)+td_pib7_ch(-4))
+                                         		ELSE               100 * ((td_p6_de7/td_pib0) - (td_p6_de7/td_pib0)(-1))* 1/td_pib7_ch(-1)  ),
+contpib7_td_p6_serv    	: contpib7_td_p6_serv = 	(IF (trim==1) THEN 100 * ((td_p6_serv7/td_pib0) - (td_p6_serv7/td_pib0)(-1))* 1/td_pib7_ch(-1) -100 * ((td_p6_serv0/td_pib0) - (td_p6_serv0/td_pib0)(-1))*(td_p6_serv7_ch(-1)+td_p6_serv7_ch(-2)+td_p6_serv7_ch(-3)+td_p6_serv7_ch(-4))/(td_pib7_ch(-1)+td_pib7_ch(-2)+td_pib7_ch(-3)+td_pib7_ch(-4))
+                                         		ELSE               100 * ((td_p6_serv7/td_pib0) - (td_p6_serv7/td_pib0)(-1))* 1/td_pib7_ch(-1)  ),
+contpib7_td_p6_pchtr    : contpib7_td_p6_pchtr = 	(IF (trim==1) THEN 100 * ((td_p6_pchtr7/td_pib0) - (td_p6_pchtr7/td_pib0)(-1))* 1/td_pib7_ch(-1) -100 * ((td_p6_pchtr0/td_pib0) - (td_p6_pchtr0/td_pib0)(-1))*(td_p6_pchtr7_ch(-1)+td_p6_pchtr7_ch(-2)+td_p6_pchtr7_ch(-3)+td_p6_pchtr7_ch(-4))/(td_pib7_ch(-1)+td_pib7_ch(-2)+td_pib7_ch(-3)+td_pib7_ch(-4))
+                                         		ELSE               100 * ((td_p6_pchtr7/td_pib0) - (td_p6_pchtr7/td_pib0)(-1))* 1/td_pib7_ch(-1)  ),
+
+contpib7_td_p7_d   		: -contpib7_td_p7_d = 	(IF (trim==1) THEN 100 * ((td_p7_d7/td_pib0) - (td_p7_d7/td_pib0)(-1))* 1/td_pib7_ch(-1) -100 * ((td_p7_d0/td_pib0) - (td_p7_d0/td_pib0)(-1))*(td_p7_d7_ch(-1)+td_p7_d7_ch(-2)+td_p7_d7_ch(-3)+td_p7_d7_ch(-4))/(td_pib7_ch(-1)+td_pib7_ch(-2)+td_pib7_ch(-3)+td_pib7_ch(-4))
+                                          		ELSE               100 * ((td_p7_d7/td_pib0) - (td_p7_d7/td_pib0)(-1))* 1/td_pib7_ch(-1)  ),
+contpib7_td_p7_az   	: -contpib7_td_p7_az = 	(IF (trim==1) THEN 100 * ((td_p7_az7/td_pib0) - (td_p7_az7/td_pib0)(-1))* 1/td_pib7_ch(-1) -100 * ((td_p7_az0/td_pib0) - (td_p7_az0/td_pib0)(-1))*(td_p7_az7_ch(-1)+td_p7_az7_ch(-2)+td_p7_az7_ch(-3)+td_p7_az7_ch(-4))/(td_pib7_ch(-1)+td_pib7_ch(-2)+td_pib7_ch(-3)+td_pib7_ch(-4))
+                                         		ELSE               100 * ((td_p7_az7/td_pib0) - (td_p7_az7/td_pib0)(-1))* 1/td_pib7_ch(-1)  ),
+contpib7_td_p7_dim  	: -contpib7_td_p7_dim = 	(IF (trim==1) THEN 100 * ((td_p7_dim7/td_pib0) - (td_p7_dim7/td_pib0)(-1))* 1/td_pib7_ch(-1) -100 * ((td_p7_dim0/td_pib0) - (td_p7_dim0/td_pib0)(-1))*(td_p7_dim7_ch(-1)+td_p7_dim7_ch(-2)+td_p7_dim7_ch(-3)+td_p7_dim7_ch(-4))/(td_pib7_ch(-1)+td_pib7_ch(-2)+td_pib7_ch(-3)+td_pib7_ch(-4))
+                                          		ELSE               100 * ((td_p7_dim7/td_pib0) - (td_p7_dim7/td_pib0)(-1))* 1/td_pib7_ch(-1)  ),
+contpib7_td_p7_de   	: -contpib7_td_p7_de = 	(IF (trim==1) THEN 100 * ((td_p7_de7/td_pib0) - (td_p7_de7/td_pib0)(-1))* 1/td_pib7_ch(-1) -100 * ((td_p7_de0/td_pib0) - (td_p7_de0/td_pib0)(-1))*(td_p7_de7_ch(-1)+td_p7_de7_ch(-2)+td_p7_de7_ch(-3)+td_p7_de7_ch(-4))/(td_pib7_ch(-1)+td_pib7_ch(-2)+td_pib7_ch(-3)+td_pib7_ch(-4))
+                                          		ELSE               100 * ((td_p7_de7/td_pib0) - (td_p7_de7/td_pib0)(-1))* 1/td_pib7_ch(-1)  ),
+contpib7_td_p7_serv 	: -contpib7_td_p7_serv = 	(IF (trim==1) THEN 100 * ((td_p7_serv7/td_pib0) - (td_p7_serv7/td_pib0)(-1))* 1/td_pib7_ch(-1) -100 * ((td_p7_serv0/td_pib0) - (td_p7_serv0/td_pib0)(-1))*(td_p7_serv7_ch(-1)+td_p7_serv7_ch(-2)+td_p7_serv7_ch(-3)+td_p7_serv7_ch(-4))/(td_pib7_ch(-1)+td_pib7_ch(-2)+td_pib7_ch(-3)+td_pib7_ch(-4))
+                                          		ELSE               100 * ((td_p7_serv7/td_pib0) - (td_p7_serv7/td_pib0)(-1))* 1/td_pib7_ch(-1)  ),
+contpib7_td_p7_pchtr	: -contpib7_td_p7_pchtr = 	(IF (trim==1) THEN 100 * ((td_p7_pchtr7/td_pib0) - (td_p7_pchtr7/td_pib0)(-1))* 1/td_pib7_ch(-1) -100 * ((td_p7_pchtr0/td_pib0) - (td_p7_pchtr0/td_pib0)(-1))*(td_p7_pchtr7_ch(-1)+td_p7_pchtr7_ch(-2)+td_p7_pchtr7_ch(-3)+td_p7_pchtr7_ch(-4))/(td_pib7_ch(-1)+td_pib7_ch(-2)+td_pib7_ch(-3)+td_pib7_ch(-4))
+                                          		ELSE               100 * ((td_p7_pchtr7/td_pib0) - (td_p7_pchtr7/td_pib0)(-1))* 1/td_pib7_ch(-1)  ),
+
+
+contpib7_td_b1_d  		: contpib7_td_b1_d   = (IF (trim==1) THEN 100 * ((td_b1_d7/td_pib0) - (td_b1_d7/td_pib0)(-1))* 1/td_pib7_ch(-1) -100 * ((td_b1_d0/td_pib0) - (td_b1_d0/td_pib0)(-1))*(td_b1_d7_ch(-1)+td_b1_d7_ch(-2)+td_b1_d7_ch(-3)+td_b1_d7_ch(-4))/(td_pib7_ch(-1)+td_pib7_ch(-2)+td_pib7_ch(-3)+td_pib7_ch(-4))
+                                            	ELSE               100 * ((td_b1_d7/td_pib0) - (td_b1_d7/td_pib0)(-1))* 1/td_pib7_ch(-1)  ),
+contpib7_td_b1_az  		: contpib7_td_b1_az   = (IF (trim==1) THEN 100 * ((td_b1_az7/td_pib0) - (td_b1_az7/td_pib0)(-1))* 1/td_pib7_ch(-1) -100 * ((td_b1_az0/td_pib0) - (td_b1_az0/td_pib0)(-1))*(td_b1_az7_ch(-1)+td_b1_az7_ch(-2)+td_b1_az7_ch(-3)+td_b1_az7_ch(-4))/(td_pib7_ch(-1)+td_pib7_ch(-2)+td_pib7_ch(-3)+td_pib7_ch(-4))
+                                            	ELSE               100 * ((td_b1_az7/td_pib0) - (td_b1_az7/td_pib0)(-1))* 1/td_pib7_ch(-1)  ),
+contpib7_td_b1_bmna 	: contpib7_td_b1_bmna = (IF (trim==1) THEN 100 * ((td_b1_bmna7/td_pib0) - (td_b1_bmna7/td_pib0)(-1))* 1/td_pib7_ch(-1) -100 * ((td_b1_bmna0/td_pib0) - (td_b1_bmna0/td_pib0)(-1))*(td_b1_bmna7_ch(-1)+td_b1_bmna7_ch(-2)+td_b1_bmna7_ch(-3)+td_b1_bmna7_ch(-4))/(td_pib7_ch(-1)+td_pib7_ch(-2)+td_pib7_ch(-3)+td_pib7_ch(-4))
+                                             	ELSE               100 * ((td_b1_bmna7/td_pib0) - (td_b1_bmna7/td_pib0)(-1))* 1/td_pib7_ch(-1)  ),
+contpib7_td_b1_oq   	: contpib7_td_b1_oq   = (IF (trim==1) THEN 100 * ((td_b1_oq7/td_pib0) - (td_b1_oq7/td_pib0)(-1))* 1/td_pib7_ch(-1) -100 * ((td_b1_oq0/td_pib0) - (td_b1_oq0/td_pib0)(-1))*(td_b1_oq7_ch(-1)+td_b1_oq7_ch(-2)+td_b1_oq7_ch(-3)+td_b1_oq7_ch(-4))/(td_pib7_ch(-1)+td_pib7_ch(-2)+td_pib7_ch(-3)+td_pib7_ch(-4))
+                                             	ELSE               100 * ((td_b1_oq7/td_pib0) - (td_b1_oq7/td_pib0)(-1))* 1/td_pib7_ch(-1)  ),
+contpib7_td_d231_d  	: contpib7_td_d231_d  = (IF (trim==1) THEN 100 * ((td_d231_d7/td_pib0) - (td_d231_d7/td_pib0)(-1))* 1/td_pib7_ch(-1) -100 * ((td_d231_d0/td_pib0) - (td_d231_d0/td_pib0)(-1))*(td_d231_d7_ch(-1)+td_d231_d7_ch(-2)+td_d231_d7_ch(-3)+td_d231_d7_ch(-4))/(td_pib7_ch(-1)+td_pib7_ch(-2)+td_pib7_ch(-3)+td_pib7_ch(-4))
+                                             	ELSE               100 * ((td_d231_d7/td_pib0) - (td_d231_d7/td_pib0)(-1))* 1/td_pib7_ch(-1)  ),
+
+contpib7_td_p1e_bmnahj	: contpib7_td_p1e_bmnahj	= (IF (trim==1) THEN  100 * ((td_p1e_bmnahj7/td_pib0) - (td_p1e_bmnahj7/td_pib0)(-1))* 1/td_pib7_ch(-1) -100 * ((td_p1e_bmnahj0/td_pib0) - (td_p1e_bmnahj0/td_pib0)(-1))*(td_p1e_bmnahj7_ch(-1)+td_p1e_bmnahj7_ch(-2)+td_p1e_bmnahj7_ch(-3)+td_p1e_bmnahj7_ch(-4))/(td_pib7_ch(-1)+td_pib7_ch(-2)+td_pib7_ch(-3)+td_pib7_ch(-4))
+                                            		  ELSE                100 * ((td_p1e_bmnahj7/td_pib0) - (td_p1e_bmnahj7/td_pib0)(-1))* 1/td_pib7_ch(-1)  ),
+contpib7_td_memp_bmna	: contpib7_td_memp_bmna		= (IF (trim==1) THEN  100 * ((td_memp_bmna7/td_pib0) - (td_memp_bmna7/td_pib0)(-1))* 1/td_pib7_ch(-1) -100 * ((td_memp_bmna0/td_pib0) - (td_memp_bmna0/td_pib0)(-1))*(td_memp_bmna7_ch(-1)+td_memp_bmna7_ch(-2)+td_memp_bmna7_ch(-3)+td_memp_bmna7_ch(-4))/(td_pib7_ch(-1)+td_pib7_ch(-2)+td_pib7_ch(-3)+td_pib7_ch(-4))
+                                            		  ELSE                100 * ((td_memp_bmna7/td_pib0) - (td_memp_bmna7/td_pib0)(-1))* 1/td_pib7_ch(-1)  ),
+contpib7_td_p2e_bmna	: -contpib7_td_p2e_bmna		= (IF (trim==1) THEN  100 * ((td_p2e_bmna7/td_pib0) - (td_p2e_bmna7/td_pib0)(-1))* 1/td_pib7_ch(-1) -100 * ((td_p2e_bmna0/td_pib0) - (td_p2e_bmna0/td_pib0)(-1))*(td_p2e_bmna7_ch(-1)+td_p2e_bmna7_ch(-2)+td_p2e_bmna7_ch(-3)+td_p2e_bmna7_ch(-4))/(td_pib7_ch(-1)+td_pib7_ch(-2)+td_pib7_ch(-3)+td_pib7_ch(-4))
+                                             		  ELSE                100 * ((td_p2e_bmna7/td_pib0) - (td_p2e_bmna7/td_pib0)(-1))* 1/td_pib7_ch(-1)  ),
+
+contpib7_td_comext_d  	: contpib7_td_comext_d =  contpib7_td_p6_d + contpib7_td_p7_d,
+contpib7_td_dempub  	: contpib7_td_dempub =  contpib7_td_p3g_d + contpib7_td_p51g_d,
+
+// Contributions à la croissance du PIB en PRIX
+contpib5_td_pib    		: contpib5_td_pib   =   contpib3_td_pib - contpib7_td_pib,
+
+contpib5_td_dint_d   	: contpib5_td_dint_d 	=   contpib3_td_dint_d 		- contpib7_td_dint_d,
+contpib5_td_dinths_d 	: contpib5_td_dinths_d =   contpib3_td_dinths_d 	- contpib7_td_dinths_d,
+
+contpib5_td_p3g_d  		: contpib5_td_p3g_d =   contpib3_td_p3g_d - contpib7_td_p3g_d,
+contpib5_td_p3m_d  		: contpib5_td_p3m_d =   contpib3_td_p3m_d - contpib7_td_p3m_d,
+contpib5_td_p3p_d   	: contpib5_td_p3p_d =   contpib3_td_p3p_d - contpib7_td_p3p_d,
+
+contpib5_td_p51_d   	: contpib5_td_p51_d		=   contpib3_td_p51_d - contpib7_td_p51_d,
+contpib5_td_p51s_d  	: contpib5_td_p51s_d	=   contpib3_td_p51s_d - contpib7_td_p51s_d,
+contpib5_td_p51s_dhfz  	: contpib5_td_p51s_dhfz =   contpib3_td_p51s_dhfz - contpib7_td_p51s_dhfz,
+contpib5_td_p51s_fz  	: contpib5_td_p51s_fz	=   contpib3_td_p51s_fz - contpib7_td_p51s_fz,
+contpib5_td_p51b_d  	: contpib5_td_p51b_d	=   contpib3_td_p51b_d - contpib7_td_p51b_d,
+contpib5_td_p51g_d  	: contpib5_td_p51g_d	=   contpib3_td_p51g_d - contpib7_td_p51g_d,
+contpib5_td_p51m_d  	: contpib5_td_p51m_d	=   contpib3_td_p51m_d - contpib7_td_p51m_d,
+contpib5_td_p51p_d  	: contpib5_td_p51p_d	=   contpib3_td_p51p_d - contpib7_td_p51p_d,
+
+contpib5_td_p523_d  	: contpib5_td_p523_d =     contpib5_td_pib 		- contpib5_td_p7_d 		- contpib5_td_p6_d
+                               				 - contpib5_td_p51s_d 	- contpib5_td_p51b_d 	- contpib5_td_p51m_d - contpib5_td_p51g_d  - contpib5_td_p51p_d
+			                       			 - contpib5_td_p3m_d 	- contpib5_td_p3g_d 	- contpib5_td_p3p_d,
+
+contpib5_td_p6_d   		: contpib5_td_p6_d		= contpib3_td_p6_d		- contpib7_td_p6_d,
+contpib5_td_p6_az		: contpib5_td_p6_az		= contpib3_td_p6_az		- contpib7_td_p6_az,
+contpib5_td_p6_dim		: contpib5_td_p6_dim	= contpib3_td_p6_dim	- contpib7_td_p6_dim,			
+contpib5_td_p6_de		: contpib5_td_p6_de		= contpib3_td_p6_de		- contpib7_td_p6_de,	
+contpib5_td_p6_serv		: contpib5_td_p6_serv	= contpib3_td_p6_serv	- contpib7_td_p6_serv,
+contpib5_td_p6_pchtr	: contpib5_td_p6_pchtr	= contpib3_td_p6_pchtr	- contpib7_td_p6_pchtr,	
+
+contpib5_td_p7_d   		: contpib5_td_p7_d		= contpib3_td_p7_d		- contpib7_td_p7_d,
+contpib5_td_p7_az		: contpib5_td_p7_az		= contpib3_td_p7_az		- contpib7_td_p7_az,
+contpib5_td_p7_dim		: contpib5_td_p7_dim	= contpib3_td_p7_dim	- contpib7_td_p7_dim,			
+contpib5_td_p7_de		: contpib5_td_p7_de		= contpib3_td_p7_de		- contpib7_td_p7_de,	
+contpib5_td_p7_serv		: contpib5_td_p7_serv	= contpib3_td_p7_serv	- contpib7_td_p7_serv,
+contpib5_td_p7_pchtr	: contpib5_td_p7_pchtr	= contpib3_td_p7_pchtr	- contpib7_td_p7_pchtr,	
+
+contpib5_td_b1_d  		: contpib5_td_b1_d   	=  contpib3_td_b1_d - contpib7_td_b1_d,
+contpib5_td_b1_az  		: contpib5_td_b1_az  	=  contpib3_td_b1_az - contpib7_td_b1_az,
+contpib5_td_b1_bmna	 	: contpib5_td_b1_bmna	=  contpib3_td_b1_bmna - contpib7_td_b1_bmna,
+contpib5_td_b1_oq   	: contpib5_td_b1_oq  	=  contpib3_td_b1_oq - contpib7_td_b1_oq,
+contpib5_td_d231_d  	: contpib5_td_d231_d 	=  contpib3_td_d231_d - contpib7_td_d231_d,
+
+contpib5_td_p1e_bmnahj	: contpib5_td_p1e_bmnahj=  contpib3_td_p1e_bmnahj - contpib7_td_p1e_bmnahj,
+contpib5_td_memp_bmna	: contpib5_td_memp_bmna	=  contpib3_td_memp_bmna - contpib7_td_memp_bmna,
+contpib5_td_p2e_bmna	: contpib5_td_p2e_bmna	=  contpib3_td_p2e_bmna - contpib7_td_p2e_bmna,
+
+contpib5_td_comext_d  	: contpib5_td_comext_d =  contpib5_td_p6_d + contpib5_td_p7_d,
+contpib5_td_dempub  	: contpib5_td_dempub =  contpib5_td_p3g_d + contpib5_td_p51g_d,
+
+
+//---------------------------------------------------------------------------------------------------------------------------------------
+// EQUATIONS COMPTABLES DU TES SUR LES VOLUMES
+
+	/* PIB et autres agrégats */
+
+td_pib7_ch 			: td_pib7		= td_p3g_d7 +td_p3m_d7 +td_p3p_d7 +td_p51s_d7 +td_p51b_d7 +td_p51g_d7 +td_p51m_d7 +td_p51p_d7+td_p523_d7 +td_p6_d7 -td_p7_d7 ,
+
+td_pibhs7_ch		: td_pibhs7		= td_p3g_d7 +td_p3m_d7 +td_p3p_d7 +td_p51s_d7 +td_p51b_d7 +td_p51g_d7 +td_p51m_d7 +td_p51p_d7            +td_p6_d7 -td_p7_d7 ,
+td_dint_d7_ch		: td_dint_d7	= td_p3g_d7 +td_p3m_d7 +td_p3p_d7 +td_p51s_d7 +td_p51b_d7 +td_p51g_d7 +td_p51m_d7 +td_p51p_d7 +td_p523_d7,
+td_dinths_d7_ch		: td_dinths_d7	= td_dint_d7 - td_p523_d7 ,
+td_dhs_d7_ch		: td_dhs_d7 	= td_rnt_d7 - td_p523_d7 ,
+td_rnt_d7_ch 		: td_rnt_d7		= td_pib7 + td_p7_d7 ,
+
+td_comext_d7_ch		: td_comext_d7	= td_p6_d7 - td_p7_d7 ,
+td_dempub7_ch		: td_dempub7	= td_p3g_d7 + td_p51g_d7 ,
+
+/* ---------- Approche offre ---------- */
+
+	/* P1 - Production */
+td_p1e_d7_ch		: td_p1e_d7		= td_b1_d7		+ td_p2e_d7 ,
+td_p1e_az7_ch		: td_p1e_az7	= td_b1_az7 	+ td_p2e_az7,
+td_p1e_oq7_ch		: td_p1e_oq7	= td_b1_oq7		+ td_p2e_oq7,
+
+/* Partage de la production BMNA marges commerciales / hors marges commerciales */
+td_p1e_bmnahj7_ch	: td_p1e_bmnahj7 	= td_p1e_bmna7 - td_memp_bmna7 , // solde finale de l'approche offre sur les marges commerciales
+
+
+/* Marché intérieur */
+td_p1mi_d7_ch 		: td_p1mi_d7 = td_p1e_d7 - td_p6_d7 ,
+td_p1mi_bmna7_ch 	: td_p1mi_bmna7 + ( td_p6_d7 - td_p6_az7 ) = td_p1e_bmna7 ,
+td_p1mi_bmnahj7_ch 	: td_p1mi_bmnahj7 + td_p6_d7 - td_p6_az7 = td_p1e_bmna7 - td_memp_bmna7 ,
+
+	/* P2 - Consommation intermédiaire */
+td_p2e_d7_ch		: td_p2e_d7		= td_p2e_az7 + td_p2e_bmna7 + td_p2e_oq7 ,
+
+td_p2e_bmna7_ch_comp: td_p1e_bmna7	= td_b1_bmna7	+ td_p2e_bmna7 , // solde de la VA qui provient de l'approche demande et de la production exogène
+
+
+	/* B1 - Valeur ajoutée des branches  et  D231 - Impôts nets des subventions sur produits */
+td_b1_d7_ch			: td_b1_d7 	= td_pib7 - td_d231_d7 , 
+td_b1_bmna7_ch		: td_b1_d7  = td_b1_az7 + td_b1_bmna7 + td_b1_oq7 , // la VA td_b1_bmna7 sert de solde		
+
+/* ---------- Approche demande ---------- */
+
+					
+/* P5 FBC - et P51 - FBCF */
+td_p5_d7_ch			: td_p5_d7		= td_p51_d7 + td_p523_d7 ,
+td_p51_d7_ch		: td_p51_d7		= td_p51s_d7 + td_p51b_d7 + td_p51g_d7 + td_p51m_d7 + td_p51p_d7 ,
+td_p51s_d7_ch		: td_p51s_d7	= td_p51s_dhfz7 + td_p51s_fz7 ,
+
+
+	/* P6 - Exports */
+td_p6_d7_ch			: td_p6_d7	= td_p6_serv7 + td_p6_dim7  + td_p6_az7 + td_p6_de7 + td_p6_pchtr7 , /* td_p6_az7 sert de solde */
+td_p6_db7_ch		: td_p6_db7 = td_p6_az7 + td_p6_dim7 + td_p6_de7 ,
+td_p6_dimhc27_ch	: td_p6_dim7 = td_p6_c27 + td_p6_dimhc27 ,
+td_p6_dhde7_ch		: td_p6_dhde7	= td_p6_d7 - td_p6_de7 ,
+td_p6_dhdec27_ch	: td_p6_dhdec27 = td_p6_d7 - td_p6_de7 - td_p6_c27,
+td_p6_dec27_ch		: td_p6_dec27 	= td_p6_de7+ td_p6_c27,
+
+	/* P7 - Imports */
+td_p7_d7_ch			: td_p7_d7 = td_p7_de7  + td_p7_az7 +  td_p7_dim7 + td_p7_serv7 + td_p7_pchtr7 , /* td_p7_az7 sert de solde */
+td_p7_db7_ch		: td_p7_db7 = td_p7_az7 + td_p7_dim7 + td_p7_de7 ,
+td_p7_dimhc27_ch	: td_p7_dim7 = td_p7_c27 + td_p7_dimhc27 ,
+
+
+td_p7_dhde7_ch		: td_p7_dhde7	= td_p7_d7 - td_p7_de7 ,
+td_p7_dhdec27_ch	: td_p7_dhdec27 = td_p7_d7 - td_p7_de7 - td_p7_c27,
+td_p7_dec27_ch		: td_p7_dec27 	= td_p7_de7+ td_p7_c27,
+
+//---------------------------------------------------------------------------------------------------------------------------------------
+// EQUATIONS COMPTABLES DU TES SUR LES VALEURS/PRIX
+
+/* PIB et autres agrégats */
+
+td_pib5_ch 		: td_pib3		= td_p3g_d3 +td_p3m_d3 +td_p3p_d3 +td_p51s_d3 +td_p51b_d3 +td_p51g_d3 +td_p51m_d3 +td_p51p_d3 +td_p523_d3 +td_p6_d3 -td_p7_d3 ,
+
+td_pibhs5_ch 	: td_pibhs3		= td_p3g_d3 +td_p3m_d3 +td_p3p_d3 +td_p51s_d3 +td_p51b_d3 +td_p51g_d3 +td_p51m_d3 +td_p51p_d3             +td_p6_d3 -td_p7_d3 ,
+td_dint_d5_ch	: td_dint_d3	= td_p3g_d3 +td_p3m_d3 +td_p3p_d3 +td_p51s_d3 +td_p51b_d3 +td_p51g_d3 +td_p51m_d3 +td_p51p_d3 +td_p523_d3,
+td_dinths_d5_ch	: td_dinths_d3	= td_dint_d3 - td_p523_d3 ,
+td_dhs_d5_ch	: td_dhs_d3		= td_rnt_d3 - td_p523_d3 ,
+td_rnt_d5_ch	: td_rnt_d3		= td_pib3 + td_p7_d3 ,
+
+td_comext_d5_ch 	: td_comext_d3	= td_p6_d3 - td_p7_d3 ,
+td_dempub5_ch 	: td_dempub3	= td_p3g_d3 + td_p51g_d3 ,
+
+/* ---------- Approche offre ---------- */
+
+	/* P1 - Production */
+td_p1e_d5_ch 		: td_p1e_d3		= td_b1_d3		+ td_p2e_d3,
+td_p1e_az5_ch 		: td_p1e_az3	= td_b1_az3		+ td_p2e_az3,
+td_p1e_oq5_ch 		: td_p1e_oq3	= td_b1_oq3		+ td_p2e_oq3 ,
+
+/* Partage de la production BMNA marges commerciales / hors marges commerciales */
+/* td_memp_bmna5_ch	: solde comptable in fine sur la production */
+td_p1e_bmnahj5_ch	: td_p1e_bmnahj3  = td_p1e_bmna3 - td_memp_bmna3 ,
+
+/* Marché intérieur */
+td_p1mi_d5_ch		: td_p1mi_d3 = td_p1e_d3 - td_p6_d3 ,
+td_p1mi_bmna5_ch	: td_p1mi_bmna3 + ( td_p6_d3 - td_p6_az3 ) = td_p1e_bmna3,
+td_p1mi_bmnahj5_ch_comp	: td_p1mi_bmnahj3 + td_p6_d3 - td_p6_az3 = td_p1e_bmna3 - td_memp_bmna3 ,
+
+
+/* P2 - Consommation intermédiaire */
+td_p2e_d5_ch 		: td_p2e_d3 	= td_p2e_az3 + td_p2e_bmna3 + td_p2e_oq3 ,
+/* td_p2e_az5_ch	: td_p2e_az3	EXOGENE */
+td_p2e_bmna5_ch_comp		: td_p1e_bmna3	= td_b1_bmna3	+ td_p2e_bmna3 , // solde de la VA qui provient de l'approche demande et de la production exogène
+/*td_p2e_oq5_ch		: td_p2e_oq3	EXOGENE */
+
+/* B1 - Valeur ajoutée des branches  et  D231 - Impôts nets des subventions sur produits */
+td_b1_d5_ch			: td_b1_d3	= td_pib3 - td_d231_d3 ,
+td_b1_bmna5_ch		: td_b1_d3 	= td_b1_az3 + td_b1_bmna3 + td_b1_oq3 ,		// la VA BMNA sert de solde
+
+
+/* ---------- Approche demande ---------- */
+
+
+
+	/* P5 FBC - et P51 - FBCF */
+td_p5_d5_ch			: td_p5_d3 		= td_p51_d3 + td_p523_d3 ,
+td_p51_d5_ch		: td_p51_d3		= td_p51s_d3 + td_p51m_d3 + td_p51g_d3 + td_p51b_d3 + td_p51p_d3 ,
+td_p51s_d5_ch		: td_p51s_d3	= td_p51s_dhfz3 + td_p51s_fz3 ,
+
+
+	/* P6 - Exports */
+td_p6_d5_ch 		: td_p6_d3 = td_p6_serv3 + td_p6_dim3  + td_p6_az3 + td_p6_de3 + td_p6_pchtr3,
+td_p6_db5_ch		: td_p6_db3 = td_p6_az3 + td_p6_dim3 + td_p6_de3 ,
+td_p6_dim5_ch		: td_p6_dim3 = td_p6_c23 + td_p6_dimhc23 ,
+td_p6_dhde5_ch		: td_p6_dhde3 = td_p6_d3 - td_p6_de3 ,
+td_p6_dhdec25_ch	: td_p6_dhdec23 = td_p6_d3 - td_p6_de3 - td_p6_c23 ,
+td_p6_dec25_ch		: td_p6_dec23 	= td_p6_de3 + td_p6_c23 ,
+
+
+	/* P7 - Imports */
+td_p7_d5_ch 		: td_p7_d3 = td_p7_de3  + td_p7_az3 + td_p7_dim3 + td_p7_serv3 + td_p7_pchtr3 ,
+td_p7_db5_ch		: td_p7_db3 = td_p7_az3 + td_p7_dim3 + td_p7_de3 ,
+td_p7_dim5_ch		: td_p7_dim3 = td_p7_c23 + td_p7_dimhc23 ,
+td_p7_dhde5_ch		: td_p7_dhde3 = td_p7_d3 - td_p7_de3 ,
+td_p7_dhdec25_ch	: td_p7_dhdec23 = td_p7_d3 - td_p7_de3 - td_p7_c23 ,
+td_p7_dec25_ch		: td_p7_dec23 	= td_p7_de3 + td_p7_c23 ,
+;
+
+LKORD ;
+FILEMOD mod2ch;
+//PRTMOD DECLARATIONS 'x 'n ;
+
+// ************************************************************************************************
+// *************************** SIMULATION DU MODELE COMPTABLE DU TES ******************************
+// ************************************************************************************************
+
+// Création de la base don2
+ACCESS don1 type formdata id don1ch.frm mode r; SEARCH don1 ;
+ACCESS don2 type formdata id don2ch.frm mode c; SEARCH don2 w ;
+DO DFDELETE("don2",">");
+DO DFCOPY'F ("don1","don2");
+DELACCESS don1 ;
+
+USEMOD mod2ch ;
+
+DOSAVE listeendogene = MODSYM("endogenous");
+
+&lklimit ;
+SIMULATE;
+CONOPT concr 0.000000001 ;
+SIMSTART 1982q4 ; // date de début du modèle
+
+// Le TES est disponible en intégralité aux premiers résultats et aux résultats détaillés 
+
+DOTIL 2016q4 ;  // date de fin du modèle (dernière date pour laquelle on a des comptes trimestriels complets disponibles)
+
+SAVESIM output ;
+// Comparer deux bases: don2 qui contient les données de départ et output qui contient les endogènes recalculés à partir de mod2ch
+&PRTDSET pcer dsets don2 output, RANGE 2016q4	, vari td_pib7_ch td_pib5_ch ; 
+
+DRANGE 1978q1 TO 2016q4 ;  					                   
+&execmd " do don2_@(listeendogene) = overlay(save_output_@(listeendogene),don2_@(listeendogene))" ";" ;
+DRANGE ;
+
+// ************************************************************************************************
+// **************************************** CALAGE DU TEE simplifié *******************************
+// ************************************************************************************************
+
+DELACCESS all ; DELSAVE all ; DRANGE ;
+
+USEMOD mod2ch ;
+
+ADDSYM exogenous	tc_d239_bmna3
+					ipc /* pour le calcul des salaires réels */
+				/* Emploi  - Salaires */
+					tc_emp_d1		tc_empns_d1		tc_emps_oq1 tc_emps_bmna1	tc_emps_bmna7
+					emploi_estel	pe					   
+					 tc_d11_az3 tc_d11_bmna3 tc_d11_oq3
+					 tc_d12_az3 tc_d12_bmna3 tc_d12_oq3
+					smb
+					CICE_D39
+				/* Bouclage du RDB (Revenu disponible brut - B6) des ménages  */
+					td_b6_s143 tc_b6fin_s143 td_d11b2_s14r3  tc_d5_s14e3 tc_d62_s14r3 tc_d61_s14e3
+;    
+                            
+ADDSYM endogenous
+				/* Marge des entreprises - Excédent brut d'exploitation (EBE - B2) */
+					prod_bmna1 prod_bmna7
+					td_b2_bmna3	taux_marge_bmna
+					csu_D1_CICE_pib
+					csu_D1_D239_p1_bmna   cui_P1_bmna csu_D1_D239_P1_bmna_lisse	csu_D1_B1_bmna
+				/* Emploi  - Salaires */
+					tc_emps_d1	tc_emps_az1
+					tc_d1_d3 tc_d1_az3 tc_d1_bmna3 tc_d1_oq3
+					tc_d11_d3
+					tc_d12_d3
+					smpt_bmna wd SMPT_BMNA1_IPC  tc_d11_oq1_IPC
+				/* Bouclage du RDB (Revenu disponible brut - B6) des ménages  */
+					td_b6aut_s143	td_b6act_s143	  tc_b6trans_s143 TD_B6_S141_P3MD5	taux_epargne_S14 
+;
+
+ADDEQ bottom,
+
+	/* Emploi  - Salaires */
+tc_emp_d1 	    : tc_emp_d1     = tc_emps_d1 + tc_empns_d1,
+tc_emps_d1		: tc_emps_d1    = tc_emps_az1 + tc_emps_bmna1 + tc_emps_oq1 , //tc_emps_az1 sert de solde comptable	
+
+tc_d1_az3 		: tc_d1_az3	 	= tc_d11_az3 + tc_d12_az3 ,	
+tc_d1_bmna3 	: tc_d1_bmna3	= tc_d11_bmna3 + tc_d12_bmna3 ,
+tc_d1_oq3 		: tc_d1_oq3	 	= tc_d11_oq3 + tc_d12_oq3 ,	
+
+tc_d1_d3		: tc_d1_d3		= tc_d1_az3 + tc_d1_bmna3 + tc_d1_oq3 ,	
+tc_d11_d3		: tc_d11_d3		= tc_d11_az3 + tc_d11_bmna3 + tc_d11_oq3 ,	
+tc_d12_d3		: tc_d12_d3		= tc_d12_az3 + tc_d12_bmna3 + tc_d12_oq3 ,	
+
+tc_d11_bmna3 	: tc_d11_bmna3  = smpt_bmna*tc_emps_bmna1,
+
+
+wd_def			: wd			= smpt_bmna/smb,
+SMPT_BMNA1_IPC 	: SMPT_BMNA1_IPC= smpt_bmna/ipc,
+tc_d11_oq1_IPC 	: tc_d11_oq1_IPC= tc_d11_oq3/ipc,
+
+	/* Marge des entreprises - Excédent brut d'exploitation (EBE - B2) */
+prod_bmna1		: prod_bmna1	= td_b1_bmna7_ch / tc_emps_bmna1,
+prod_bmna7		: prod_bmna7	= td_b1_bmna7_ch / tc_emps_bmna7,
+
+csu_D1_CICE_pib	: csu_D1_CICE_pib    = (tc_d1_d3 + CICE_D39)/ td_pib7_ch,
+csu_D1_D239_P1_bmna 		: csu_D1_D239_P1_bmna			= (tc_d11_bmna3 + tc_d12_bmna3 + tc_d239_bmna3)/td_p1e_bmna7_ch ,
+csu_D1_D239_P1_bmna_lisse	: csu_D1_D239_P1_bmna_lisse		= (csu_D1_D239_p1_bmna+csu_D1_D239_p1_bmna(-1)+csu_D1_D239_p1_bmna(-2)+csu_D1_D239_p1_bmna(-3))/4 ,
+cui_P1_bmna	 	: cui_P1_bmna		= td_p2e_bmna3/td_p1e_bmna7_ch ,
+csu_D1_B1_bmna	: csu_D1_B1_bmna	= (tc_d11_bmna3 + tc_d12_bmna3)/ td_b1_bmna7_ch,
+
+td_b2_bmna3 	: td_b2_bmna3   	= td_b1_bmna3 - tc_d11_bmna3 - tc_d12_bmna3 -tc_d239_bmna3,
+taux_marge_bmna	: taux_marge_bmna 	= 100 * (td_b2_bmna3/td_b1_bmna3),
+
+	/* Bouclage du RDB (Revenu disponible brut - B6) des ménages  */
+td_b6_s143 	    : td_b6_s143		= tc_b6fin_s143+td_b6act_s143+tc_d62_s14r3- tc_d61_s14e3-tc_d5_s14e3+td_b6aut_s143 ,
+td_b6act_s143	: td_b6act_s143		= td_d11b2_s14r3 + tc_d11_az3 + tc_d11_bmna3 + tc_d11_oq3 ,
+tc_b6trans_s143 : tc_b6trans_s143	= - tc_d5_s14e3 - tc_d61_s14e3 + tc_d62_s14r3,
+TD_B6_S141_P3MD5: TD_B6_S141_P3MD5	= td_b6_s143/td_p3m_d5_ch,
+taux_epargne_S14: taux_epargne_S14	= 100*(1-td_p3m_d3/td_b6_s143) ,
+;
+
+LKORD ;
+FILEMOD mod2ch;
+
+ACCESS don2 type formdata id don2ch.frm mode w ; SEARCH don2 w ;
+
+&lklimit ;
+SIMULATE ; CONOPT concr 0.000000001 ;
+SIMSTART 1982q4 ;
+
+// Les variables du TEE ne sont pas disponibles jusqu'au dernier point lors de la publication des premiers résultats
+
+DOTIL 2016q4;  						
+SAVESIM output ;
+
+&PRTDSET pcer dsets don2 output, RANGE 2016q4	, vari td_pib7_ch td_pib5_ch ; 
+
+
+DOSAVE listeendogene = MODSYM("endogenous");
+&execmd " do don2_@(listeendogene) = overlay(save_output_@(listeendogene),don2_@(listeendogene))" ";" ;
+
+
+
+// La base don2ch.frm a été créé
+// Le modèle mod2ch a été créé
+// EOF

@@ -1,0 +1,41 @@
+// Ce code source est régi par la licence CeCILL V2.1 soumise au droit français et 
+//respectant les principes de diffusion des logiciels libres. Il est autorisé de modifier 
+//et/ou redistribuer ce code sous les conditions de la licence CeCILL V2.1. Le texte complet
+// de la licence CeCILL V2.1 est dans le fichier `LICENSE`.
+
+// fonction qui reconstitue le stock de capital
+// cf DOISY-PESIN
+// en entree : valeur du stock pour le point de ref
+// 		la date de reference
+//		tdec1
+//		tdec2
+//		date debut
+//		date fin		
+
+
+addfun main;
+
+procedure main(valeur,inv,dateref,tdec1,tdec2)
+{
+	z=reshape(valeur,dateref);
+ 	t1=dateref+1;
+	t2=enddate(inv);
+    for (i=t1;i<=t2;i=i+1)
+       {
+       prolong=(1-tdec2)*z[i-1]+inv[i];
+       z=c.(z,prolong); 
+        }
+
+	w=reshape(valeur,dateref);
+	t1=dateref;
+	t2=startdate(inv);
+     for (i=t1;i>=t2;i=i-1)
+        {
+       prolong=(w[i]-inv[i])/(1-tdec1);
+       w=reshape(c.(prolong,w),i-1); 
+          }
+        
+    z=c.(subrange(w,startdate(w),enddate(w)-1),z);
+	
+  return(z); 
+  }

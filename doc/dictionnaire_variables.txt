@@ -1,0 +1,307 @@
+﻿		Code Opale		Définition	
+		
+Fiche PIB - Variables du Tableau des Entrées-Sorties (TES) - (source : Insee)				
+		TD_PIB7_CH	PIB en volume à prix chaînés - Md€ 2014	
+		TD_PIB5_CH	Déflateur du PIB - Base 100 = 2014	
+		TD_PIB3	PIB en valeur - Md€ courants	
+				
+		TD_DINT_D7_CH	Demande intérieure totale en volume à prix chaînés (Md€ 2014)	
+		TD_DINT_D5_CH	Déflateur de la demande intérieure totale - Base 100 = 2014	
+		TD_DINT_D3	Demande intérieure totale en valeur - Md€ courants	
+		TD_DINTHS_D7_CH	Demande intérieure hors variations de stocks (et objets de valeur) en volume à prix chaînés (Md€ 2014)	
+		TD_DINTHS_D5_CH	Déflateur de la demande intérieure hors variations de stocks (et objets de valeur)  - Base 100 = 2014	
+		TD_DINTHS_D3	Demande intérieure hors variations de stocks (et objets de valeur) en valeur - Md€ courants	
+		TD_RNT_D7_CH	Total des emplois/ressources en volume à prix chaînés (Md€ 2014)	
+		TD_RNT_D5_CH	Déflateur du total des emplois/ressources  - Base 100 = 2014	
+		TD_RNT_D3	Total des emplois/ressources en valeur - Md€ courants	
+		TD_PIBHS7_CH	PIB hors variations de stocks (et objets de valeur) en volume à prix chaînés (Md€ 2014)	
+		TD_PIBHS5_CH	Déflateur du PIB hors variations de stocks (et objets de valeur)  - Base 100 = 2014	
+		TD_PIBHS3	PIB hors variations de stocks (et objets de valeur) en valeur - Md€ courants	
+				
+		TD_P1E_BMNA7_CH	Production des branches marchandes non agricoles (BMNA) en volume à prix chaînés (Md€ 2014)	
+		TD_P1E_BMNA5_CH	Déflateur de la production des branches marchandes non agricoles (BMNA) - Base 100 = 2014	
+		TD_P1E_BMNA3	Production des branches marchandes non agricoles (BMNA) hors marges commerciales en valeur - Md€ courants	
+		TD_P1MI_BMNAHJ7_CH	Production pour le marché intérieur des branches marchandes non agricoles (BMNA) hors marges commerciales en volume à prix chaînés (Md€ 2014)	
+		TD_P1MI_BMNAHJ5_CH	Déflateur de la production  pour le marché intérieur des branches marchandes non agricoles (BMNA) hors marges commerciales - Base 100 = 2014	
+		TD_P1MI_BMNAHJ3	Production pour le marché intérieur des branches marchandes non agricoles (BMNA) en valeur - Md€ courants	
+		TD_MEMP_BMNA7_CH	Marges commerciales en volume à prix chaînés (Md€ 2014)	
+		TD_MEMP_BMNA5_CH	Déflateur des marges commerciales - Base 100 = 2014	
+		TD_MEMP_BMNA3	Marges commerciales en valeur - Md€ courants	
+		TD_P2E_BMNA7_CH	Consommation intermédiaire des branches marchandes non agricoles (BMNA) en volume à prix chaînés (Md€ 2014)	
+		TD_P2E_BMNA5_CH	Déflateur des consommation intermédiaire des branches marchandes non agricoles (BMNA) - Base 100 = 2014	
+		TD_P2E_BMNA3	Consommation intermédiaire des branches marchandes non agricoles (BMNA) en valeur - Md€ courants	
+				
+Valeur ajoutée (B1)	TD_B1_D7_CH	Valeur ajoutée totale en volume à prix chaînés (Md€ 2014)	- (source : Insee)	
+		TD_B1_D5_CH	Déflateur de la valeur ajoutée totale - Base 100 = 2014	
+		TD_B1_D3	Valeur ajoutée totale en valeur - Md€ courants	
+		TD_B1_AZ7_CH	Valeur ajoutée des branches agricoles (AZ) en volume à prix chaînés (Md€ 2014)	
+		TD_B1_AZ5_CH	Déflateur de la valeur ajoutée des branches agricoles (AZ) - Base 100 = 2014	
+		TD_B1_AZ3	Valeur ajoutée des branches agricoles (AZ) en valeur - Md€ courants	
+		TD_B1_BMNA7_CH	Valeur ajoutée des branches marchandes non agricoles (BMNA) en volume à prix chaînés (Md€ 2014)	
+		TD_B1_BMNA5_CH	Déflateur de la valeur ajoutée des branches marchandes non agricoles (BMNA) - Base 100 = 2014	
+		TD_B1_BMNA3	Valeur ajoutée des branches marchandes non agricoles (BMNA) en valeur - Md€ courants	
+		TC_B1_BMNA7_CH	Valeur ajoutée des branches marchandes non agricoles (BMNA) en volume à prix chaînés (Md€ 2014)	
+		TC_B1_BMNA5_CH	Déflateur de la valeur ajoutée des branches marchandes non agricoles (BMNA) - Base 100 = 2014	
+		TC_B1_BMNA3	Valeur ajoutée des branches marchandes non agricoles (BMNA) en valeur - Md€ courants	
+		TD_B1_OQ7_CH	Valeur ajoutée des branches non marchandes (OQ) en volume à prix chaînés (Md€ 2014)	
+		TD_B1_OQ5_CH	Déflateur de la valeur ajoutée des branches non marchandes (OQ) - Base 100 = 2014	
+		TD_B1_OQ3	Valeur ajoutée des branches non marchandes (OQ) en valeur - Md€ courants	
+				
+Passage PIB - VA	TD_D231_D7_CH	Impôts nets des subventions sur produits (D231 = D21 - D31) en volume à prix chaînés (Md€ 2014)	- (source : Insee)	
+		TD_D231_D5_CH	Déflateur des impôts nets des subventions sur produits (D231 = D21 - D31) - Base 100 = 2014	
+		TD_D231_D3	Impôts nets des subventions sur produits (D231 = D21 - D31) en valeur - Md€ courants	
+				
+Consommation finale (P3) - (source : Insee)	
+		TD_P3M_D7_CH	Consommation finale des ménages (S14) en volume à prix chaînés (Md€ 2014)	
+		TD_P3M_D5_CH	Déflateur de la consommation finale des ménages (S14) - Base 100 = 2014	
+		TD_P3M_D3	Consommation finale des ménages (S14) en valeur - Md€ courants	
+		TD_P3G_D7_CH	Consommation finale des APU (S13) en volume à prix chaînés (Md€ 2014)	
+		TD_P3G_D5_CH	Déflateur de la consommation finale des APU (S13) - Base 100 = 2014	
+		TD_P3G_D3	Consommation finale des APU (S13) en valeur - Md€ courants	
+		TD_P3P_D7_CH	Consommation finale des ISBLSM (S15) en volume à prix chaînés (Md€ 2014)	
+		TD_P3P_D5_CH	Déflateur de la consommation finale des ISBSM (S15) - Base 100 = 2014	
+		TD_P3P_D3	Consommation finale des ISBLSM (S15) en valeur - Md€ courants	
+				
+FBCF (P51)	- (source : Insee)	
+		TD_P51_D7_CH	FBCF totale en volume à prix chaînés (Md€ 2014)	
+		TD_P51_D5_CH	Déflateur de la FBCF totale - Base 100 = 2014	
+		TD_P51_D3	FBCF totale en valeur - Md€ courants	
+		TD_P51S_D7_CH	FBCF totale des sociétés et EI non financières (S11 et S14AA) en volume à prix chaînés (Md€ 2014)	
+		TD_P51S_D5_CH	Déflateur de la FBCF totale des FBCF des sociétés et EI non financières (S11 et S14AA) - Base 100 = 2014	
+		TD_P51S_D3	FBCF totale des sociétés et EI non financières (S11 et S14AA) en valeur - Md€ courants	
+		TD_P51S_DHFZ7_CH	FBCF hors construction (DHFZ) des sociétés et EI non financières (S11 et S14AA) en volume à prix chaînés (Md€ 2014)	
+		TD_P51S_DHFZ5_CH	Déflateur de la FBCF hors construction (DHFZ) des FBCF des sociétés et EI non financières (S11 et S14AA) - Base 100 = 2014	
+		TD_P51S_DHFZ3	FBCF hors construction (DHFZ) des sociétés et EI non financières (S11 et S14AA) en valeur - Md€ courants	
+		TD_P51S_FZ7_CH	FBCF en construction (FZ) des sociétés et EI non financières (S12 et S14AA) en volume à prix chaînés (Md€ 2014)	
+		TD_P51S_FZ5_CH	Déflateur de la FBCF en construction (FZ) des FBCF des sociétés et EI non financières (S12 et S14AA) - Base 100 = 2014	
+		TD_P51S_FZ3	FBCF en construction (FZ) des sociétés et EI non financières (S12 et S14AA) en valeur - Md€ courants	
+		TD_P51B_D7_CH	FBCF des sociétés et EI financières (S12 et S14AF) en volume à prix chaînés (Md€ 2014)	
+		TD_P51B_D5_CH	Déflateur de la FBCF des FBCF des sociétés et EI financières (S12 et S14AF) - Base 100 = 2014	
+		TD_P51B_D3	FBCF des sociétés et EI financières (S12 et S14AF) en valeur - Md€ courants	
+		TD_P51G_D7_CH	FBCF des APU (S13) en volume à prix chaînés (Md€ 2014)	
+		TD_P51G_D5_CH	Déflateur de la FBCF des APU (S13) - Base 100 = 2014	
+		TD_P51G_D3	FBCF des APU (S13) en valeur - Md€ courants	
+		TD_P51M_D7_CH	FBCF des ménages purs (hors EI - S14B) en volume à prix chaînés (Md€ 2014)	
+		TD_P51M_D5_CH	Déflateur de la FBCF des ménages purs (hors EI - S14B) - Base 100 = 2014	
+		TD_P51M_D3	FBCF des ménages purs (hors EI - S14B) en valeur - Md€ courants	
+		TD_P51P_D7_CH	FBCF des ISBLSM (S15) en volume à prix chaînés (Md€ 2014)	
+		TD_P51P_D5_CH	Déflateur de la FBCF des ISBLSM (S15) - Base 100 = 2014	
+		TD_P51P_D3	FBCF des ISBLSM (S15) en valeur - Md€ courants	
+				
+		TD_P523_D3	Variation de stocks et objets de valeur en valeur (Md€)	
+				
+Exportations (P6)	- (source : Insee)	
+		TD_P6_D7_CH	Exportations totales (D) en volume à prix chaînés (Md€ 2014)	
+		TD_P6_D5_CH	Déflateur des exportations totales (D) - Base 100 = 2014	
+		TD_P6_D3	Exportations totales (D) en valeur - Md€ courants	
+		TD_P6_DB7_CH	Exportations de biens (DB) en volume à prix chaînés (Md€ 2014)	
+		TD_P6_DB5_CH	Déflateur des exportations de biens (DB) - Base 100 = 2014	
+		TD_P6_DB3	Exportations de biens (DB) en valeur - Md€ courants	
+		TD_P6_AZ7_CH	Exportations agricoles (AZ) en volume à prix chaînés (Md€ 2014)	
+		TD_P6_AZ5_CH	Déflateur des exportations agricoles (AZ) - Base 100 = 2014	
+		TD_P6_AZ3	Exportations agricoles (AZ) en valeur - Md€ courants	
+		TD_P6_DIM7_CH	Exportations de biens manufacturés (DIM) en volume à prix chaînés (Md€ 2014)	
+		TD_P6_DIM5_CH	Déflateur des exportations de biens manufacturés (DIM) - Base 100 = 2014	
+		TD_P6_DIM3	Exportations de biens manufacturés (DIM) en valeur - Md€ courants	
+		TD_P6_DIMHC27_CH	Exportations de biens manufacturés hors carburants raffinés (DIMHC2 = DIM- C2) en volume à prix chaînés (Md€ 2014)	
+		TD_P6_DIMHC25_CH	Déflateur des exportations de biens manufacturés hors carburants raffinés (DIMHC2 = DIM- C2) - Base 100 = 2014	
+		TD_P6_DIMHC23	Exportations de biens manufacturés hors carburants raffinés (DIMHC2 = DIM- C2) en valeur - Md€ courants	
+		TD_P6_C27_CH	Exportations de carburants raffinés (C2) en volume à prix chaînés (Md€ 2014)	
+		TD_P6_C25_CH	Déflateur des exportations de carburants raffinés  (C2) - Base 100 = 2014	
+		TD_P6_C23	Exportations de carburants raffinés (C2) en valeur - Md€ courants	
+		TD_P6_DE7_CH	Exportations de carburants bruts (DE) en volume à prix chaînés (Md€ 2014)	
+		TD_P6_DE5_CH	Déflateur des exportations de carburants bruts  (DE) - Base 100 = 2014	
+		TD_P6_DE3	Exportations de carburants bruts (DE) en valeur - Md€ courants	
+		TD_P6_DEC27_CH	Exportations d'énergie (DEC2 = DE + C2) en volume à prix chaînés (Md€ 2014)	
+		TD_P6_DEC25_CH	Déflateur des exportations d'énergie (DEC2 = DE + C2) - Base 100 = 2014	
+		TD_P6_DEC23	Exportations d'énergie (DEC2 = DE + C2) en valeur - Md€ courants	
+		TD_P6_SERV7_CH	Exportations de services (y compris la correction CAF-FAB) (SERV) en volume à prix chaînés (Md€ 2014)	
+		TD_P6_SERV5_CH	Déflateur de services (y compris la correction CAF-FAB) (SERV) - Base 100 = 2014	
+		TD_P6_SERV3	Exportations de services (y compris la correction CAF-FAB) (SERV) en valeur - Md€ courants	
+		TD_P6_PCHTR7_CH	Correction territoriale sur les exportations (PCHTR) en volume à prix chaînés (Md€ 2014)	
+		TD_P6_PCHTR5_CH	Déflateur de la correction territoriale sur les exportations (PCHTR) - Base 100 = 2014	
+		TD_P6_PCHTR3	Correction territoriale sur les exportations (PCHTR) en valeur - Md€ courants	
+				
+	Importations (P7) - (source : Insee)	
+		TD_P7_D7_CH	Importations totales (D) en volume à prix chaînés (Md€ 2014)	
+		TD_P7_D5_CH	Déflateur des importations totales (D) - Base 100 = 2014	
+		TD_P7_D3	Importations totales (D) en valeur - Md€ courants	
+		TD_P7_DB7_CH	Importations de biens (DB) en volume à prix chaînés (Md€ 2014)	
+		TD_P7_DB5_CH	Déflateur des importations de biens (DB) - Base 100 = 2014	
+		TD_P7_DB3	Importations de biens (DB) en valeur - Md€ courants	
+		TD_P7_AZ7_CH	Importations agricoles (AZ) en volume à prix chaînés (Md€ 2014)	
+		TD_P7_AZ5_CH	Déflateur des importations agricoles (AZ) - Base 100 = 2014	
+		TD_P7_AZ3	Importations agricoles (AZ) en valeur - Md€ courants	
+		TD_P7_DIM7_CH	Importations de biens manufacturés (DIM) en volume à prix chaînés (Md€ 2014)	
+		TD_P7_DIM5_CH	Déflateur des importations de biens manufacturés (DIM) - Base 100 = 2014	
+		TD_P7_DIM3	Importations de biens manufacturés (DIM) en valeur - Md€ courants	
+		TD_P7_DIMHC27_CH	Importations de biens manufacturés hors carburants raffinés (DIMHC2 = DIM- C2) en volume à prix chaînés (Md€ 2014)	
+		TD_P7_DIMHC25_CH	Déflateur des importations de biens manufacturés hors carburants raffinés (DIMHC2 = DIM- C2) - Base 100 = 2014	
+		TD_P7_DIMHC23	Importations de biens manufacturés hors carburants raffinés (DIMHC2 = DIM- C2) en valeur - Md€ courants	
+		TD_P7_C27_CH	Importations de carburants raffinés (C2) en volume à prix chaînés (Md€ 2014)	
+		TD_P7_C25_CH	Déflateur des importations de carburants raffinés  (C2) - Base 100 = 2014	
+		TD_P7_C23	Importations de carburants raffinés (C2) en valeur - Md€ courants	
+		TD_P7_DE7_CH	Importations de carburants bruts (DE) en volume à prix chaînés (Md€ 2014)	
+		TD_P7_DE5_CH	Déflateur des importations de carburants bruts  (DE) - Base 100 = 2014	
+		TD_P7_DE3	Importations de carburants bruts (DE) en valeur - Md€ courants	
+		TD_P7_DEC27_CH	Importations d'énergie (DEC2 = DE + C2) en volume à prix chaînés (Md€ 2014)	
+		TD_P7_DEC25_CH	Déflateur des importations d'énergie (DEC2 = DE + C2) - Base 100 = 2014	
+		TD_P7_DEC23	importations d'énergie (DEC2 = DE + C2) en valeur - Md€ courants	
+		TD_P7_SERV7_CH	importations de services (y compris la correction CAF-FAB) (SERV) en volume à prix chaînés (Md€ 2014)	
+		TD_P7_SERV5_CH	Déflateur de services (y compris la correction CAF-FAB) (SERV) - Base 100 = 2014	
+		TD_P7_SERV3	Importations de services (y compris la correction CAF-FAB) (SERV) en valeur - Md€ courants	
+		TD_P7_PCHTR7_CH	Correction territoriale sur les importations (PCHTR) en volume à prix chaînés (Md€ 2014)	
+		TD_P7_PCHTR5_CH	Déflateur de la correction territoriale sur les importations (PCHTR) - Base 100 = 2014	
+		TD_P7_PCHTR3	Correction territoriale sur les importations (PCHTR) en valeur - Md€ courants	
+		
+Contribution à la croissance du PIB	- (source : Insee)				
+		CONTPIB3_TD_PIB	Contribution à la croissance du PIB en valeur du PIB (= taux de croissance du PIB)	
+		CONTPIB5_TD_PIB	Contribution à la croissance du déflateur du PIB du PIB  (= taux de croissance du PIB)	
+		CONTPIB7_TD_PIB	Contribution à la croissance du PIB en volume du PIB  (= taux de croissance du PIB)	
+		CONTPIB3_TD_B1_D	Contribution à la croissance du PIB en valeur de la VA totale (B1_D)	
+		CONTPIB5_TD_B1_D	Contribution à la croissance du déflateur du PIB de la VA totale (B1_D)	
+		CONTPIB7_TD_B1_D	Contribution à la croissance du PIB en volume de la VA totale (B1_D)	
+		CONTPIB3_TD_B1_AZ	Contribution à la croissance du PIB en valeur de la VA agricole (B1_AZ)	
+		CONTPIB5_TD_B1_AZ	Contribution à la croissance du déflateur du PIB de la VA agricole (B1_AZ)	
+		CONTPIB7_TD_B1_AZ	Contribution à la croissance du PIB en volume de la VA agricole (B1_AZ)	
+		CONTPIB3_TD_B1_BMNA	Contribution à la croissance du PIB en valeur de la VA BMNA (B1_BMNA)	
+		CONTPIB5_TD_B1_BMNA	Contribution à la croissance du déflateur du PIB de la VA BMNA (B1_BMNA)	
+		CONTPIB7_TD_B1_BMNA	Contribution à la croissance du PIB en volume de la VA BMNA (B1_BMNA)	
+		CONTPIB3_TD_B1_OQ	Contribution à la croissance du PIB en valeur de la VA non marchande (B1_OQ)	
+		CONTPIB5_TD_B1_OQ	Contribution à la croissance du déflateur du PIB de la VA non marchande (B1_OQ)	
+		CONTPIB7_TD_B1_OQ	Contribution à la croissance du PIB en volume de la VA non marchande (B1_OQ)	
+		CONTPIB3_TD_D231_D	Contribution à la croissance du PIB en valeur du passage PIB-VA (D231_D)	
+		CONTPIB5_TD_D231_D	Contribution à la croissance du déflateur du PIB du passage PIB-VA (D231_D)	
+		CONTPIB7_TD_D231_D	Contribution à la croissance du PIB en volume du passage PIB-VA (D231_D)	
+		CONTPIB3_TD_P3M_D	Contribution à la croissance du PIB en valeur de la consommation finale des ménages (P3M_D)	
+		CONTPIB5_TD_P3M_D	Contribution à la croissance du déflateur du PIB de la consommation finale des ménages (P3M_D)	
+		CONTPIB7_TD_P3M_D	Contribution à la croissance du PIB en volume  de la consommation finale des ménages (P3M_D)	
+		CONTPIB3_TD_P3G_D	Contribution à la croissance du PIB en valeur de la consommation finale des APU (P3G_D)	
+		CONTPIB5_TD_P3G_D	Contribution à la croissance du déflateur du PIB de la consommation finale des APU (P3G_D)	
+		CONTPIB7_TD_P3G_D	Contribution à la croissance du PIB en volume  de la consommation finale des APU (P3G_D)	
+		CONTPIB3_TD_P3P_D	Contribution à la croissance du PIB en valeur de la consommation finale des ISBLSM (P3P_D)	
+		CONTPIB5_TD_P3P_D	Contribution à la croissance du déflateur du PIB de la consommation finale des ISBLSM (P3P_D)	
+		CONTPIB7_TD_P3P_D	Contribution à la croissance du PIB en volume  de la consommation finale des ISBLSM (P3P_D)	
+		CONTPIB3_TD_P51_D	Contribution à la croissance du PIB en valeur de la FBCF totale (P51_D)	
+		CONTPIB5_TD_P51_D	Contribution à la croissance du déflateur du PIB de la FBCF totale (P51_D)	
+		CONTPIB7_TD_P51_D	Contribution à la croissance du PIB en volume de la FBCF totale (P51_D)	
+		CONTPIB3_TD_P51S_D	Contribution à la croissance du PIB en valeur de la FBCF des ENF (P51S_D)	
+		CONTPIB5_TD_P51S_D	Contribution à la croissance du déflateur du PIB de la FBCF des ENF (P51S_D)	
+		CONTPIB7_TD_P51S_D	Contribution à la croissance du PIB en volume de la FBCF des ENF (P51S_D)	
+		CONTPIB3_TD_P51B_D	Contribution à la croissance du PIB en valeur de la FBCF des EF (P51B_D)	
+		CONTPIB5_TD_P51B_D	Contribution à la croissance du déflateur du PIB de la FBCF des EF (P51B_D)	
+		CONTPIB7_TD_P51B_D	Contribution à la croissance du PIB en volume de la FBCF des EF (P51B_D)	
+		CONTPIB3_TD_P51G_D	Contribution à la croissance du PIB en valeur de la FBCF des APU (P51G_D)	
+		CONTPIB5_TD_P51G_D	Contribution à la croissance du déflateur du PIB de la FBCF  des APU (P51G_D)	
+		CONTPIB7_TD_P51G_D	Contribution à la croissance du PIB en volume de la FBCF  des APU (P51G_D)	
+		CONTPIB3_TD_P51M_D	Contribution à la croissance du PIB en valeur de la FBCF des ménages (P51M_D)	
+		CONTPIB5_TD_P51M_D	Contribution à la croissance du déflateur du PIB de la FBCF des ménages (P51M_D)	
+		CONTPIB7_TD_P51M_D	Contribution à la croissance du PIB en volume de la FBCF des ménages (P51M_D)	
+		CONTPIB3_TD_P51P_D	Contribution à la croissance du PIB en valeur de la FBCF des ISBLSM (P51P_D)	
+		CONTPIB5_TD_P51P_D	Contribution à la croissance du déflateur du PIB de la FBCF des ISBLSM (P51P_D)	
+		CONTPIB7_TD_P51P_D	Contribution à la croissance du PIB en volume de la FBCF des ISBLSM (P51P_D)	
+		CONTPIB3_TD_COMEXT_D	Contribution à la croissance du PIB en valeur du commerce extérieur (COMEXT_D)	
+		CONTPIB5_TD_COMEXT_D	Contribution à la croissance du déflateur du PIB du commerce extérieur (COMEXT_D)	
+		CONTPIB7_TD_COMEXT_D	Contribution à la croissance du PIB en volume du commerce extérieur (COMEXT_D)	
+		CONTPIB3_TD_P6_D	Contribution à la croissance du PIB en valeur des exportations totales (P6_D)	
+		CONTPIB5_TD_P6_D	Contribution à la croissance du déflateur du PIB des exportations totales (P6_D)	
+		CONTPIB7_TD_P6_D	Contribution à la croissance du PIB en volume des exportations totales (P6_D)	
+		CONTPIB3_TD_P7_D	Contribution à la croissance du PIB en valeur des importations totales (P7_D)	
+		CONTPIB5_TD_P7_D	Contribution à la croissance du déflateur du PIB des importations totales (P7_D)	
+		CONTPIB7_TD_P7_D	Contribution à la croissance du PIB en volume des importations totales (P7_D)	
+		CONTPIB3_TD_P523_D	Contribution à la croissance du PIB en valeur des variations de stocks (et objets de valeur) (P523_D)	
+		CONTPIB5_TD_P523_D	Contribution à la croissance du déflateur du PIB  des variations de stocks (et objets de valeur) (P523_D)	
+		CONTPIB7_TD_P523_D	Contribution à la croissance du PIB en volume  des variations de stocks (et objets de valeur) (P523_D)	
+		CONTPIB3_TD_DINT_D	Contribution à la croissance du PIB en valeur de la demande intérieur (DINT_D)	
+		CONTPIB5_TD_DINT_D	Contribution à la croissance du déflateur du PIB  de la demande intérieur (DINT_D)	
+		CONTPIB7_TD_DINT_D	Contribution à la croissance du PIB en volume  de la demande intérieur (DINT_D)	
+		CONTPIB3_TD_DINTHS_D	Contribution à la croissance du PIB en valeur de la demande intérieur hors variations de stocks (et objets de valeur) (DINTHS_D)	
+		CONTPIB5_TD_DINTHS_D	Contribution à la croissance du déflateur du PIB  de la demande intérieur hors variations de stocks (et objets de valeur) (DINTHS_D)	
+		CONTPIB7_TD_DINTHS_D	Contribution à la croissance du PIB en volume  de la demande intérieur hors variations de stocks (et objets de valeur) (DINTHS_D)	
+				
+Comptes d'agents	- (source : Insee)				
+		BMNA	TD_B2_BMNA3	Excédent brut d'exploitation (EBE = B2) des branches marchandes non agricoles (BMNA)	
+		TC_D239_BMNA3	Impôts nets des subventions sur la production (D239 = D29 - D39) des branches marchandes non agricoles (BMNA)	
+		TAUX_MARGE_BMNA	Taux de marge des branches marchandes non agricoles (BMNA)	
+				
+Ménages (S14)	TD_B6_S143	Revenu disponible brut des ménages (RDB - B6)	- (source : Insee)	
+		TC_B6ACT_S143	Revenus d'activité, salaires et EBE des ménages purs	
+		TC_B6FIN_S143	Revenus de la propriété (D4)	
+		TC_B6TRANS_S143	Revenus de transfert (impôts D5, prestations D62, cotisations D61)	
+		TD_B6AUT_S143	Autres composants du RDB	
+		TD_B6_S141_P3MD5	Pouvoir d'achat du RDB - RDB déflaté par le déflateur de la consommation finale des ménages (P3M)	
+		TD_B6_S141_IPC	Pouvoir d'achat du RDB - RDB déflaté par le déflateur de l(IPC	
+		TAUX_EPARGNE_S14	Taux d'épargne des ménages	
+				
+Emploi / Salaires / Productivité		
+				
+	Total économie	TC_EMP_D1	Emploi total (D) en personnes physiques	
+		TC_EMPS_D1	Emploi salarié - Total économie (D) en personnes physiques	
+		TCHO	Taux de chômage (France métropolitaine)	
+		TC_D1_D3	Rémunération des salariés - Total économie (D)	
+		TC_D11_D3	Salaires et traitements bruts - Total économie (D)	
+		TC_D12_D3	Cotisations sociales à la charge des employeurs - Total économie (D)	
+		CSU_D1_PIB	Coût salariaux unitaires en pt de PIB - Total économie	
+				
+				
+	BMNA	
+		PROD_BMNA1	Productivité du travail dans les branches marchandes non agricoles (BMNA) en personnes physiques	
+		PROD_BMNA7	Productivité du travail dans les branches marchandes non agricoles (BMNA) en EQTP	
+		TC_EMPS_BMNA7	Emploi salarié des branches marchandes non agricoles (BMNA) en équivalent temp plein	
+		TC_EMPS_BMNA1	Emploi salarié des branches marchandes non agricoles (BMNA) en personnes physiques	
+		TC_D1_BMNA3	Rémunération des salariés - Branches marchandes non agricoles (BMNA)	
+		TC_D11_BMNA3	Salaires et traitements bruts - Branches marchandes non agricoles (BMNA)	
+		TC_D12_BMNA3	Cotisations sociales à la charge des employeurs - Branches marchandes non agricoles (BMNA)	
+		SMPT_BMNA	Salaire moyen par tête (SMPT, en personnes physiques) dans les branches marchandes non agricoles (BMNA)	
+		SMEQTP_BMNA	Salaire moyen en équivalent temps plein (SMEQPT) dans les branches marchandes non agricoles (BMNA)	
+		SMPT_BMNA1_IPC	SMPT (en personnes physiques) réel dans les branches marchandes non agricoles (BMNA), déflaté par l'IPC	
+		CSU_D1_D239_P1_BMNA	Coût salariaux unitaires par unité de production BMNA, y compris impôts nets des subventions sur la produxtion (D29-D39)	
+		CSU_D1_P1_BMNA	Coût salariaux unitaires par unité de production BMNA	
+		CUI_P1_BMNA	Coût unitaires des CI par unité de production BMNA	
+		CU_TOT_P1_BMNA	Coût unitaires totaux par unité de production BMNA	
+		CSU_D1_B1_BMNA	Coût salariaux unitaires par unité de VA BMNA
+		
+Hypothèses internationales				
+		TUC	Taux d'utilisation des capacités	
+		BARIL_EU	Prix du baril de brent en €	
+		DEMMON	Demande mondiale	
+		CSUFX	Coût salariaux étranger à l'exportation de référence	
+		PETFX	Prix de référence étranger à l'exportation	
+		PETFM	Prix de référence étranger à l'importation	
+		COMPIT	Compétitivité prix à l'importation - Total hors énergie	
+		COMPITSERV	Compétitivité coût à l'importation dans les services	
+		TAUX_PEN_IMP_D3	Taux de pénétration des importations dans le total des ressources en valeur	
+		PERF_EXP	Performance à l'exportation - Champs biens	
+		BALCOM_D3	Balance commerciale en biens et services	
+		BALCOM_D3_PIB3	Balance commerciale en biens et services, en pt de PIB	
+		IPC	indice des prix à la consommation	
+		IPCVOL	Composante volatile de l'indice des prix à la consommation	
+		IPCSJ	Composante sous-jacente de l'indice des prix à la consommation	
+		PART_EMERGENTS_CPB	Part des émergents (selon le CPB)	
+				
+Autres				
+		IMMAT	Immatriculations de voitures particulières neuves (http://www.statistiques.developpement-durable.gouv.fr/transports/s/immatriculations.html)
+		Pimmo	Prix de l'immobilier (http://www.bdm.insee.fr/bdm2/rechercheMultiple)
+		SMB		salaire mensuel de base (http://dares.travail-emploi.gouv.fr/dares-etudes-et-statistiques/statistiques-de-a-a-z/article/les-indices-de-salaire-de-base)
+		TXENT	taux d'intérêt à moyen long terme des prêts aux SNF (http://www.banque-france.fr/fileadmin/statistiques/fr/base/html/idx_tmf_mens_france_fr_fr.html)
+		PE 		Effet des politiques de l'emploi
+		CICE_D39	Créance de CICE (en comptabilité nationale)
+		TEMPVS1	écarts des températures à leur moyenne (https://www.rte-france.com/fr/eco2mix/eco2mix)
+		Dummy2009q1: dummy intégrée pour l'équation d'imports d'énergie
+		Dummy2011q1: dummy pour l'équation d'imports d'énergie (blocage de Marseille)
+		Tendp1mi: tendance pour l'équation de prix de prod BMNA
+		Tendemp2: rupture de tendance pour l'équation d'emploi
+		Tendemp3: rupture de tendance pour l'équation d'emploi
+		Tendemp4: rupture de tendance pour l'équation d'emploi
+		Dummy2000q2plus: choc en niveau sur les imports de services
+		Balneg: Indicatrice captant le report d’achat et le contrecoup liés aux mesures Balladur (1993Q1 et 1995Q3)
+		Balpos: Indicatrice captant l’anticipation d’achat lié à l’arrêt des mesures Balladur (1995Q2)
+		Jupneg: Indicatrice captant la sortie du dispositif Juppé (1996Q4)
+		Juppos: Indicatrice captant l’entrée dans le dispositif Juppé (1996Q1)
+		Filneg: Indicatrice captant la sortie du dispositif de prime à la casse (2011Q2)
+		Indic1999q3: indicatrice pour une modification de la législation sur les millésimes des automobiles
+		Dummy1998q1plus: indicatrice captant le choc en niveau sur les impôts sur le revenu et le patrimoine payés par les ménages (basculement cotisations sociales vers la CSG)
+		Dummy2009q2: indicatrice captant une surprise d'inflation sur les prestations ménages
+
+				
+				

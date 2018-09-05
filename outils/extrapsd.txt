@@ -1,0 +1,24 @@
+// Ce code source est régi par la licence CeCILL V2.1 soumise au droit français et 
+//respectant les principes de diffusion des logiciels libres. Il est autorisé de modifier 
+//et/ou redistribuer ce code sous les conditions de la licence CeCILL V2.1. Le texte complet
+// de la licence CeCILL V2.1 est dans le fichier `LICENSE`.
+
+// fonction qui extrapole une serie x en la multipliant par mult et en additionnant add
+// en entree : serie x, valeurs mutl et add, dates de debut et de fin de prolongement 
+// on peut prolonger en niveau et en taux de croissance
+
+addfun main;
+
+procedure main(x,mult,add,debut,fin)
+  {
+	z=subrange(x,startdate(x),debut-1);
+ 	t1=debut;
+	t2=fin;
+    for (i=t1;i<=t2;i=i+1)
+       {
+       j=(i-1);
+       prolong=z[j]*mult+add;
+       z=c.(z,prolong); 
+        }
+  return(z); 
+  }

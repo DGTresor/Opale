@@ -1,0 +1,47 @@
+// Ce code source est régi par la licence CeCILL V2.1 soumise au droit français et 
+//respectant les principes de diffusion des logiciels libres. Il est autorisé de modifier 
+//et/ou redistribuer ce code sous les conditions de la licence CeCILL V2.1. Le texte complet
+// de la licence CeCILL V2.1 est dans le fichier `LICENSE`.
+
+// fonction qui calcule l'approximation moyenne mobile infinie d'un processus arma
+// en entrée : les parties ar et ma
+// en sortie : un numeric array à 1 dimension et de taille 1000
+
+
+
+
+addfun main ;
+procedure main(ar,ma) 
+{
+nomprog = "MAINF" ;
+nbar=nvals(ar) ;
+nbma=nvals(ma) ;
+sor=ma[1] ; /* le premier terme est simplement égal au premier terme de la partie ma */
+i=2; /* on traite donc maintenant à partir du second terme */
+while ( i<=nbma ) /* les termes ma n'interviennent directement dans le calcul du coefficient que tant qu'ils existent */
+{
+   nbmin=min(i-1,nbar);
+   somme=0;
+   for (j=1; j<=nbmin;j=j+1)
+   {
+      somme=somme+sor[i-j]*ar[j];
+   }
+   sor=c.(sor,ma[i]+somme);
+   i=i+1; 
+   }
+FOR (i=nbma+1; i<=1000;i=i+1) 
+{
+   nbmin=min(i-1,nbar);
+   somme=0;
+   for (j=1; j<=nbmin;j=j+1)
+   {
+      somme=somme+sor[i-j]*ar[j];
+   }
+   sor=c.(sor,somme);
+  }
+
+
+return(sor) ;
+
+
+}

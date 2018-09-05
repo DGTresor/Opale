@@ -1,0 +1,229 @@
+// Ce code source est régi par la licence CeCILL V2.1 soumise au droit français et 
+//respectant les principes de diffusion des logiciels libres. Il est autorisé de modifier 
+//et/ou redistribuer ce code sous les conditions de la licence CeCILL V2.1. Le texte complet
+// de la licence CeCILL V2.1 est dans le fichier `LICENSE`.
+
+ /**************************************************************************************/
+ /*  TOTX -                                                                            */
+ /*                                                                                    */
+ /*  fonction qui donne les niveaux et les croissances trim et ann d'une variable.     */
+ /*                                                                                    */
+ /*  Format d'appel                                                                    */
+ /*                                                                                    */
+ /*     &totx periode andeb anfin glissement calcul archive in in in ... ;             */
+ /*                                                                                    */
+ /*  Exemple d'appel :                                                                 */
+ /*                                                                                    */
+ /*     &totx 4 1994 1996 1 moyenne ctrim962_t PIBM8 PN1_V018 ;                        */
+ /*                                                                                    */
+ /**************************************************************************************/
+ 
+
+addfun main  ;
+procedure main()
+begin;
+
+        nmpgm = "TOTX" ;
+
+PERIODE :
+	get up 1 number periodic "PERIODICITE (1,4,12 ... ): " ;
+	if ( periodic <= 0 ) then
+	begin ;
+       		print( "PERIODICITE erronée !" ) ;
+         	clear() ;                
+         	goto ABND ;
+        end ;
+
+AN_DEBUT : 	
+	get up 1 number andeb  "ANNEE DE DEBUT ";           
+        if (andeb < 1000) then
+        begin;
+          	print ("ANNEE erronée !");
+		clear() ;
+          	goto abnd ;
+        end;
+
+	andeb_date = convert( andeb || "A" , "Date" ) ; 
+
+AN_FIN :
+	get up 1  number anfin  "ANNEE DE FIN ";           
+        if (anfin < 1000  or  anfin < andeb) then
+        begin;
+        	print ("ANNEE erronée !");
+		clear() ;
+          	goto abnd ;
+        end;
+
+	anfin_date = convert( anfin || "A" , "Date" ) ; 
+
+	nban = anfin - andeb + 1;
+	lftemplate = crseries( andeb_date :: anfin_date , 1 );
+
+	get up 1 number glissement "GLISSEMENT 1 OU 0 (=PERIODE)" ; 
+        if (glissement > 1) then
+        begin;
+        	print ("Le glissement doit être égal à 0 ou 1 (PERIODE) !");
+		clear() ;
+          	goto abnd ;
+        end;
+	if (glissement <> 1) then glissement = periodic ;
+
+MODE_CALCUL :
+	get up 1 item calcul "SOMME OU MOYENNE";
+	calcul = upper (calcul);
+        if (calcul <> "SOMME"  and calcul <> "MOYENNE") then
+        begin;
+        	print ("Le mode de calcul doit être SOMME ou MOYENNE !");
+		clear() ;
+          	goto abnd ;
+        end;
+
+
+	>> do td = seq(&andeb,&anfin);
+
+        get up 1 item archive "ARCHIVE PASSEE EN PARAMETRE ";  
+
+      
+        putopt ("OUTOPT","RMARG",300);  
+        putopt ("OUTOPT","NUMWIDTH",8);
+        PUTOPT ("OUTOPT","DECIMALS",-3);
+ 
+      
+
+	i=1;
+	get up 1 item in "NOM DE SERIE ";
+	while (in <> ";")
+	begin;
+
+		on error 
+    {
+
+			/* TRAITEMENT DU CAS OU UNE SERIE EST ABSENTE */ 
+			if ( lasterr () == 2222 ) then goto SUITE ;    
+			/* TRAITEMENT DU CAS OU LA PERIODICITE DEMANDEE EST INCOMPATIBLE AVEC LA SERIE */ 
+	  	if ( lasterr () == 6000 ) then
+			begin;
+				print ("La série " , var , "n'a pas une périodicité multiple de " ,periodic );
+				goto SUITE;
+			end;		
+		}
+
+		var = archive || "_" || in ;  
+ 
+		//===================
+		// DONNEES EN NIVEAU
+		//===================
+		x = getdata ( var , 0, c.() ) ; 
+		if ( identical ( x , c.())) then 
+		{ // message de série non trouvée
+			print ( "La série '" , var , "' n'est pas trouvée." ) ; 
+			goto suite; 
+		} // message de série non trouvée
+		x = compact ( x , -1, periodic ) ; 
+		affich_deb = startdate( convts ( reshape ( 1, andeb_date ) , startdate ( x )  )) ;
+		affich_fin = enddate( convts ( reshape ( 1, anfin_date ) , startdate ( x )  )) ;
+		x = subrange ( x, affich_deb, affich_fin ) ; 
+		mx = transp ( reshape ( x, periodic , nban )) ; 
+		putdata ( x , "X", 0 ) ; 
+		putdata ( mx , "MX", 0 ) ; 
+
+		//===========================
+		// ANNUALISATION DES DONNEES
+		//===========================
+
+		>> do tx=crmat(&nban,1,na);
+		if (calcul == "SOMME") then
+		begin;
+			for (u=1 ; u <= nban ; u=u+1)
+			begin; 
+			 >> do tx= setrep(tx,sum (j=1 to &periodic:values(mx,&u,j)),&u,1);				
+			end;
+		end;
+		else begin;
+			for (u=1 ; u <= nban ; u=u+1)
+			begin; 
+			>> do tx= setrep(tx,sum (j=1 to &periodic:values(mx,&u,j))/&periodic,&u,1);				
+			end;
+		end;
+
+		//============
+		// GLISSEMENT 
+		//============
+
+		>> do namat=expand(na,&glissement);
+		>> do y = 100 * ( x - x(-&(glissement)) )/ x(-&(glissement));
+		>> do my = transp(reshape(c.(namat,y),&periodic,&nban));
+
+		//====================================
+		// GLISSEMENT SUR DONNEES ANNUALISEES
+		//====================================
+
+		>> do ty=crmat(&nban,1,na);
+		for (u=1 ; u <=nban ; u=u+1)
+		begin;
+	    		>> do ty = setrep(ty,100 * (tx[&u] - tx [&u-1] )/ tx [&u-1],&u,1);
+		end;
+ 
+
+		//*****************
+		// DEBUT EDITION 
+		//*****************
+
+    		>> dosave
+    		>>  z  = partcomb (1,5,td,mx,tx,my,ty),
+    		>>  zz = SPRINTF(TRANSP(C.("%4.0f",EXPAND("%8.0f",&(periodic)+1),EXPAND("%7.2f",&(periodic)+1))),z);
+
+    		>> do lib = "";
+
+		IF (HFEXIST("../\/trim80/\/data/\/label.trl")) THEN // HDP if (hfexist("..//trim80//data//label.trl")) then
+		begin;
+	 		>> do pointeur = datint (LABEL_TABLE,"&in") + 1;
+	    		if (getdata("POINTEUR",1) <> na) then
+  	  		>> do lib =  label_table[pointeur] ; 
+		end;
+
+   		>> DO DFDELETE("SAVE",c.("MX","TX","MY","TY"));
+
+     		
+   		>> do prtmat (zz,0,0,0,c.("&in      /  " || lib || "  / \n"  || repstr("-",45+&(periodic)*19) ||
+    		>>            "\n" || repstr (" ",14) || "&calcul" || repstr (" ",((&(periodic)+1)*10)-4)  || "TAUX" || "\n" || repstr("-",45+&(periodic)*19)));
+    		               
+     
+
+SUITE:
+		get up 1 item in;
+		i=i+1;
+	end;
+
+        >> outopt reset ;
+    
+        on error exit() ;
+        goto FIN ; 
+
+
+/* -------- En cas d'erreur ----------------------------------------------------------------- */
+
+ABND:
+     print(" =====> Program ",nmpgm," aborted. <=======");
+     return ( c.()) ;
+
+
+
+/* -------- FIN Normale --------------------------------------------------------------------- */
+
+FIN:
+/*     print(" =====> Ouf ",nmpgm," c'est terminé normalement. <=======");          */
+     return ( c.()) ;
+
+
+
+
+end;
+
+
+
+
+ 
+
+ 
+

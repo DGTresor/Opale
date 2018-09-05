@@ -1,0 +1,49 @@
+// Ce code source est régi par la licence CeCILL V2.1 soumise au droit français et 
+//respectant les principes de diffusion des logiciels libres. Il est autorisé de modifier 
+//et/ou redistribuer ce code sous les conditions de la licence CeCILL V2.1. Le texte complet
+// de la licence CeCILL V2.1 est dans le fichier `LICENSE`.
+
+// macro de rapartition des restes entre une varaible et la somme de ses déterminants, au prorata de la 
+// valeur absolue de ses déterminants  
+addfun main ;
+procedure main() 
+{
+get y"serie endogène" ;
+nbexo=0 ;
+
+>> delaccess repart ;
+>> access repart type memdb id .\repart.trl mode c;
+>> search repart ;
+
+
+get aux"variable exogène ou ;"  ;
+
+>> do      repart_noms=c.(),
+while (aux <> ";")
+{    
+nbexo=nbexo+1 ;
+    >> repart_x&(nbexo) =&aux ,
+    >> repart_noms =c.(repart_noms,"&aux") ,      
+    get aux"variable exogène ou ;"  ;
+}
+>>;
+>>do  repart_reste=&y,
+>>      repart_sumabsv=0*&y ,
+for (i=1;i<=nbexo;i=i+1) 
+{
+   >> repart_reste=repart_reste-repart_x&(i) ,
+   >> repart_sumabsv=repart_sumabsv+absv(repart_x&(i)) ,
+}
+noms=getdata("NOMS") ;
+
+for (i=1;i<=nbexo;i=i+1) 
+{
+   nom=noms[i];
+   >> repart_&(nom)=&(nom)+repart_reste*absv(repart_x&(i))/repart_sumabsv ,
+}
+
+>>;
+
+
+
+}// fin du programme

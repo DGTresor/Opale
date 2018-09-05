@@ -1,0 +1,25 @@
+// Ce code source est régi par la licence CeCILL V2.1 soumise au droit français et 
+//respectant les principes de diffusion des logiciels libres. Il est autorisé de modifier 
+//et/ou redistribuer ce code sous les conditions de la licence CeCILL V2.1. Le texte complet
+// de la licence CeCILL V2.1 est dans le fichier `LICENSE`.
+
+// fonction qui rétropole une série x par le taux de croissance de y entre la date début de y 
+// et la date de début de x
+// en entrée : serie x, serie y définie sur une période allant plus loin dans le passé
+
+addfun main;
+
+procedure main(x,y)
+  {
+  t1=startdate(x);
+  t2=startdate(y);
+ serie=x;
+  for (i=t1-1;i>=t2;i=i-1)
+     {j=i+1;
+     valeur=reshape(serie[j]*y[i]/y[j],i);
+     serie=( c.(valeur,serie) );
+     
+     }
+  return(serie);
+  } 
+     

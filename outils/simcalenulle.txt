@@ -1,0 +1,122 @@
+// Ce code source est régi par la licence CeCILL V2.1 soumise au droit français et 
+//respectant les principes de diffusion des logiciels libres. Il est autorisé de modifier 
+//et/ou redistribuer ce code sous les conditions de la licence CeCILL V2.1. Le texte complet
+// de la licence CeCILL V2.1 est dans le fichier `LICENSE`.
+
+// *****************************************************************************************************************
+// macro servant à faire une simul à cale nulle d une equation
+// exemple d'appel : &simcalenulle 1993q1 2000q4 equation cale endogene O O ;
+// le premier O ou N signifie Oui ou Non pour avoir un graphique à la fin avec les deux séries simulées observées
+// par défaut : oui
+// le deuxième O ou N signifie Oui ou Non pour avoir l'écart relatif à la fin entre les deux séries simulées observées
+// par défaut : oui
+// *****************************************************************************************************************
+
+
+addfun main ;
+procedure main()
+begin;
+
+
+AN_DEBUT : 	
+	get from term  item andeb  "ANNEE DE DEBUT";           
+        IF (DATE2YEAR(CONVERT(andeb,"date")) < 1960 OR DATE2YEAR(CONVERT(andeb,"date")) > 2007) THEN
+        begin;
+          	print ("ANNEE erronée !");
+		clear() ;
+          	goto fin ;
+        end;
+
+	perdeb=convert(andeb,"date");
+
+
+AN_FIN : 	
+	get from term  item anfin  "ANNEE DE FIN";           
+        IF (DATE2YEAR(CONVERT(anfin,"date")) < 1960 OR DATE2YEAR(CONVERT(anfin,"date")) > 2030) THEN
+        begin;
+          	print ("ANNEE erronée !");
+		clear() ;
+          	goto fin ;
+        end;
+
+	perfin=convert(anfin,"date");
+
+
+
+EQUATION_A_UTILISER :
+
+	get from term  item  equation "equation A UTILISER";
+        if (equation == "") then
+        begin;
+        	print ("Le modèle doit être non vide");
+		clear() ;
+          	goto fin ;
+        end;
+
+NOM_CALE :
+	get from term  item  nomcale "NOM DE LA CALE";
+        if ( nomcale == "") then
+        begin;
+		nomcale = "cale" ;
+        end;
+
+NOM_ENDO :
+	get from term  item  nomendo "NOM DU FICHIER DE SORTIE";
+        if ( nomendo == "") then
+        begin;
+		nomendo = "endo" ;
+        end;
+
+QUESTIONGRAPHIQUE :
+	get from terminal item boolgraphique "Voulez vous un graphique   O ou N en majuscule ou minuscule";
+	boolgraphique = upper(boolgraphique) ;
+        if (boolgraphique <> "O"  and boolgraphique <> "N") then
+        begin;
+		boolgraphique = "O" ;
+        end;
+
+QUESTIONECARTRELATIF :
+	get from terminal item ecartrelatif "Voulez vous avoir l ecart relatif   O ou N en majuscule ou minuscule";
+	ecartrelatif = upper(ecartrelatif) ;
+        if (ecartrelatif <> "O"  and ecartrelatif <> "N") then
+        begin;
+		ecartrelatif = "O" ;
+        end;
+
+
+>>dosave obs = &nomendo ;
+>>dosave gobs = 100*obs/obs(-1)-100 ;
+>>dosave anobs = compact(&nomendo,-1) ;
+>>dosave ganobs = 100*anobs/anobs(-1)-100 ;
+
+>>dosave &nomcale = 0*&nomendo  ;
+
+>>usemod &equation ;
+>>simulate ;
+>>simstart &perdeb ; dotil &perfin ;
+>>savesim outputsimcalenulle ;
+
+>>dosave simul = outputsimcalenulle_&nomendo ;
+>>dosave gsimul = 100*simul/simul(-1)-100 ;
+>>DOSAVE ansimul = COMPACT(outputsimcalenulle_&nomendo ,-1) ;
+>>dosave gansimul = 100*ansimul/ansimul(-1)-100 ;
+
+>>dosave ecartrelatif = 100*obs/simul-100 ;
+
+if (boolgraphique == "O") then
+begin;
+	&plot ; >>vari obs simul ;
+end;
+
+if (ecartrelatif == "O") then
+begin;
+	>>do prt.(ecartrelatif) ;
+end;
+
+
+>>do prt.( c.("Séries à votre disposition :","obs","gobs","anobs","ganobs","simul","gsimul","ansimul","gansimul","ecartrelatif") ) ;
+
+FIN :
+>>;
+
+end;

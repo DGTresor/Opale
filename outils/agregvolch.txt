@@ -1,0 +1,69 @@
+// Ce code source est régi par la licence CeCILL V2.1 soumise au droit français et 
+//respectant les principes de diffusion des logiciels libres. Il est autorisé de modifier 
+//et/ou redistribuer ce code sous les conditions de la licence CeCILL V2.1. Le texte complet
+// de la licence CeCILL V2.1 est dans le fichier `LICENSE`.
+
+// fonction qui réalise l'agrégation en volume chaîné de la liste des séries en entrée (à partir des séries en valeur et volch),
+// l'opération réalisée pour chaque série (somme ou soustraction ) est définie par une liste de 1 et -1 passée en 2ème argument
+
+addfun main;
+
+procedure main()
+{
+// agrégation des séries en valeur et en volume au prix A-1
+
+	liste = getarg(1);
+	n = dimsize(liste);
+	somme = expand(1,n);
+	signe = getarg(2,somme,false);
+	listeval = liste||"3";
+	listevolch = liste||"7_ch";
+	listeval = upper(listeval);
+	listevolch = upper(listevolch);
+	agreg_volvo = 0;
+	agreg_val = 0;
+
+    for (k=1;k<=n;k=k+1)
+	{
+	elem_val = getdata(listeval[k],0);
+	elem_volch = getdata(listevolch[k],0);
+	elem_pxbase = pxbasevolch'f(elem_volch,elem_val);
+	elem_volvo = elem_volch*elem_pxbase;
+	agreg_volvo = agreg_volvo + signe[k]*elem_volvo;
+	agreg_val = agreg_val + signe[k]*elem_val;
+	}
+
+// calcul de la série annuelle en volume chaîné
+	
+	agreg_volvo_an = compact(agreg_volvo,0,1);
+	agreg_val_an = compact(agreg_val,0,1);
+	t0 = STARTDATE(agreg_volvo_an);
+	// Année de base, à changer à chaque changement de base
+	t1 = 2010A;
+	t2 = enddate(agreg_volvo_an);
+	agreg_volch_an = agreg_val_an[t1];
+	i = 1;    
+
+    for (j=t1-1;j>=t0-1;j=j-1)
+	{
+	valeur = (agreg_val_an[j]/agreg_volvo_an[j+1])*agreg_volch_an[1];
+     	agreg_volch_an = c.(valeur,agreg_volch_an);
+	i = i+1;
+        }
+
+    for (j=t1+1;j<=t2;j=j+1)
+	{
+	valeur = (agreg_volvo_an[j]/agreg_val_an[j-1])*agreg_volch_an[i]; 
+	agreg_volch_an = c.(agreg_volch_an,valeur);
+	i = i+1;
+        }
+
+// calcul de la série trimestrielle en volume chaîné
+
+	agreg_volch_an = reshape(agreg_volch_an,t0-1);
+	agreg_pxbase_an = agreg_val_an/agreg_volch_an;
+	agreg_pxbase = reshape(expand(agreg_pxbase_an,4),convert(convert(date2year(t0),"string")||"q1","date"));
+	agreg_volch = agreg_volvo/agreg_pxbase;
+		
+  return(agreg_volch); 
+  }

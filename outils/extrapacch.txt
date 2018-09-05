@@ -1,0 +1,66 @@
+// Ce code source est régi par la licence CeCILL V2.1 soumise au droit français et 
+//respectant les principes de diffusion des logiciels libres. Il est autorisé de modifier 
+//et/ou redistribuer ce code sous les conditions de la licence CeCILL V2.1. Le texte complet
+// de la licence CeCILL V2.1 est dans le fichier `LICENSE`.
+
+// Fonction qui extrapole une série x entre la date date1 et la date date2
+// à partir de deux séries y et z selon l'équation de récurrence suivante
+// 
+//	x(t)=x(t-1)*y(t)+z(t)*facteur
+//
+// en entrée : serie x, serie y, serie z
+//             date1, date2
+
+
+addfun main;
+
+PROCEDURE main(x,xvolvo,x3,y,z,facteur,date1,date2)
+  {
+ t1=date1;
+ t2=date2;
+ 
+ t_fin=CONVERT(DATE2YEAR(ENDDATE(x3))||"q4","date");//dernier trimestre de capital disponible
+ 
+ x3ann=RESHAPE(SPATQ(x3,1),CONVERT(DATE2YEAR(STARTDATE(x3))||"q1","date"));//série annuelle trimestrialisée
+//Prolongation du capital en valeur par hypothèse de prix constant => N'importe quelle hypothèse fonctionnerait
+   FOR (i=t_fin+1;i<=t1;i=i+1)
+   {
+  	quarter=CONVERT(SUBSTR(CONVERT(i,"string"),6,1),"num");     
+  	IF (quarter==1) THEN
+    {
+    	x3ann=( C.(x3ann,x3ann[i-1]*xvolvo[i]/x3ann[i-1]) );
+    }
+    ELSE
+    {
+    	x3ann=( C.(x3ann,x3ann[i-1]*xvolvo/xvolvo[i-1]) );
+    }
+   }
+
+  delta=1-(1-VALUES(y,ENDDATE(y)))**(1/4);//dernière valeur annuelle du taux de déclassement, passée en trimestriel
+  serie=SUBRANGE (xvolvo,STARTDATE(xvolvo), t1);
+  serie3=SUBRANGE (x3ann,STARTDATE(x3ann), t1);
+  serie7_ch=SUBRANGE (x,STARTDATE(x), t1);
+  
+  //Accumulation en volvo et en valeur
+  FOR (i=t1+1;i<=t2;i=i+1)
+  {
+  quarter=CONVERT(SUBSTR(CONVERT(i,"string"),6,1),"num");
+  j=i-quarter;//dernier trimestre de l'année précédente
+     IF (quarter==1) THEN
+     {
+     volvo=serie3[i-1]*(1-delta)+z[i]*facteur;
+     serie3=( C.(serie3,serie3[i-1]*volvo/serie3[i-1]) );//Pas de réévaluation du capital en projection. N'importe quelle hypothèse de prix marcherait
+     }
+     ELSE
+     {
+     volvo=serie[i-1]*(1-delta)+z[i]*facteur;
+     serie3=( C.(serie3,serie3[i-1]*volvo/serie[i-1]) );//Pas de réévaluation du capital en projection. N'importe quelle hypothèse de prix marcherait
+     }
+  serie=( C.(serie,volvo) );
+  point7_ch=serie[i]*serie7_ch[j]/serie3[j];//chaînage en prix de la fin de l'année précédente
+  serie7_ch=( C.(serie7_ch,point7_ch) );
+  }
+  putdata (serie,"td_k_bmna7");
+  RETURN(serie7_ch);
+  } 
+     

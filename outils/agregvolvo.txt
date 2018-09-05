@@ -1,0 +1,36 @@
+// Ce code source est régi par la licence CeCILL V2.1 soumise au droit français et 
+//respectant les principes de diffusion des logiciels libres. Il est autorisé de modifier 
+//et/ou redistribuer ce code sous les conditions de la licence CeCILL V2.1. Le texte complet
+// de la licence CeCILL V2.1 est dans le fichier `LICENSE`.
+
+// fonction qui réalise l'agrégation en vol prix A-1 de la liste des séries en entrée (à partir des séries volch et px A-1)
+// l'opération réalisée pour chaque série (somme ou soustraction ) est définie par une liste de 1 et -1 passée en 2ème argument
+
+addfun main;
+
+procedure main()
+{
+// on reconstitue les noms des séries volch et px A-1 avant de les récupérer dans la boucle d'agrégation
+
+	liste = getarg(1);
+	n = dimsize(liste,1);
+	somme = expand(1,n);
+	signe = getarg(2,somme,false);
+	listepxbase = liste||"0";
+	listevolch = liste||"7_ch";
+	listepxbase = upper(listepxbase);
+	listevolch = upper(listevolch);
+	agreg_volvo = 0;
+
+// boucle d'agrégation
+
+    for (k=1;k<=n;k=k+1)
+	{
+	elem_pxbase = getdata(listepxbase[k],0);
+	elem_volch = getdata(listevolch[k],0);
+	elem_volvo = elem_pxbase*elem_volch;
+	agreg_volvo = agreg_volvo + signe[k]*elem_volvo;
+	}
+
+  return(agreg_volvo); 
+  }

@@ -1,0 +1,1487 @@
+// Ce code source est régi par la licence CeCILL V2.1 soumise au droit français et 
+//respectant les principes de diffusion des logiciels libres. Il est autorisé de modifier 
+//et/ou redistribuer ce code sous les conditions de la licence CeCILL V2.1. Le texte complet
+// de la licence CeCILL V2.1 est dans le fichier `LICENSE`.
+
+// ***************************************************
+// ***** Modélisation au delà du cadre comptable *****
+// *****      	      exogènes    		 *****
+// *****        équations comptables		 *****
+// *****               endogènes   		 *****
+// ***************************************************
+
+// Création du modèle et de la base de données associée
+
+// Input : base de données don3ch.frm
+// Output : modèle avec sa base de données et les cales
+
+
+DELACCESS all; DELSAVE ; DRANGE;
+
+ACCESS don2 type formdata id ./don2ch.frm mode r ; SEARCH don2 ;
+ACCESS cad  type formdata id ./don3ch.frm mode c ; SEARCH cad w ;
+DO DFDELETE ("cad",">");
+DO DFCOPY'F ("don2","cad");
+DELACCESS don2 ; 
+
+
+
+// MISE A ZERO DES CALES
+DOSAVE listecale = C.(
+	/* P1 - Production */
+		"p1_mi5_ch_cale",
+	/* P2 - Consommation intermédiaire */
+		"p2_bmna5_ch_cale",
+	/* Passage - PIB-VA */
+		"d231_d3_cale",
+	/* P3 - Consommation finale */
+		"p3m_d7_ch_cale",	"p3m_d5_ch_cale",
+	/* P51 - FBCF */
+		"p51s_dhfz7_ch_cale",	"p51s_dhfz5_ch_cale",
+		"p51s_fz7_ch_cale",
+		"p51m_d7_ch_cale",
+	/* P6  - Exports */
+		"p6_dim7_ch_cale",	"p6_dim5_ch_cale",
+							"p6_dimhc25_ch_cale",
+							"p6_c25_ch_cale",
+		"p6_serv7_ch_cale",
+	/* P7  - Imports */
+		"p7_dim7_ch_cale",	"p7_dim5_ch_cale",
+							"p7_dimhc25_ch_cale",
+							"p7_c25_ch_cale",
+		"p7_de7_ch_cale",	"p7_de5_ch_cale",
+		"p7_serv7_ch_cale",
+	/* P52 et P53 -Sotck */
+		"p523_d7_cale",
+	/* Prix */
+		"ipcsj_cale","ipcvol_cale",
+	/* Salaires */                 
+		"smpt_bmna_cale", "smb_cale","wd_cale",
+	/* Emploi */
+		"emps_bmna1_cale", "emploi_estel_cale",
+	/* Bouclage du RDB */
+		"d5_s14e3_cale"  , "d62_s14r3_cale", "d62_s14r3_cale_alt"
+		);
+
+&execmd " do cad_@(listecale) = 0 * cad_td_pib7_ch" ";" ;
+
+DELACCESS all; DELSAVE ; DRANGE;
+
+//---------------------------------------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------------------------
+//  AJOUT DE VARIABLES INTERMEDIAIRES AU CADRE COMPTABLE
+//---------------------------------------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------------------------
+
+USEMOD mod2ch ;
+
+//--------------------------------------------------------------------------------------------
+//                 VARIABLES EXOGENES
+//--------------------------------------------------------------------------------------------
+
+ADDSYM exogenous
+
+	
+/* COMMERCE EXTERIEUR - ENVIRONNEMENT INTERNATIONAL */
+	baril_eu
+	demmon	PART_EMERGENTS_cpb	ouv_OCDE
+	//GER_PX	ESP_PX	ITA_PX	NDL_PX	BEL_PX	AUT_PX	FIN_PX	IRL_PX	POR_PX	GRE_PX	SWE_PX	NOR_PX	DAN_PX	SUI_PX	TUR_PX	UK_PX	USA_PX	CAN_PX	MEX_PX	COR_PX	AUS_PX	NZ_PX JPN_PX	
+	//GER_TC	ESP_TC	ITA_TC	NDL_TC	BEL_TC	AUT_TC	FIN_TC	IRL_TC	POR_TC	GRE_TC	SWE_TC	NOR_TC	DAN_TC	SUI_TC	TUR_TC	UK_TC		CAN_TC	MEX_TC	COR_TC	AUS_TC	NZ_TC JPN_TC
+	//GER_CSU	ESP_CSU	ITA_CSU	NDL_CSU	BEL_CSU	AUT_CSU	FIN_CSU	IRL_CSU	POR_CSU	GRE_CSU	SWE_CSU	NOR_CSU	DAN_CSU	SUI_CSU	TUR_CSU	UK_CSU	USA_CSU	CAN_CSU	MEX_CSU	COR_CSU	AUS_CSU	NZ_CSU JPN_CSU
+	petfm petfx csufx
+	
+/* Prix à la consommation  */
+	ipcsj ipc
+	coefpoidsipcvol	coefpoidsipcsj
+	ind_galland	ticpe_par_baril indiccrise
+
+/* Indicatrice et tendance */        
+	temps78	tendP1mi dummy2009q1plus       dummy2011q1       indic1999q3  
+	dummy1998q1plus	trendavant1998
+/* Variables explicatives de la consommation des ménages */
+	jupneg	juppos	filneg	balneg	balpos	TEMPVS1
+            
+/* Autres */
+	TUC   TCHO
+	pimmop 	pimmo
+	spd_ent
+	//poucevrai
+	
+	td_k_bmna7_ch	//cout_reel
+	// /*pouce*/	/*baljup*/		/*wimmonet*/		// variables inutilisées
+	//txconso         repo            cac       spd_conso  // variables inutilisées
+	txent 
+	
+;
+
+ADDSYM endogenous
+
+/* Prix à la consommation */
+	ipcvol
+	
+/* COMMERCE EXTERIEUR - ENVIRONNEMENT INTERNATIONAL */
+	//petfm petfx csufx
+	compet compet_cout
+	compit   compitserv
+	perf_exp
+
+	balcom_d3		balcom_db3	balcom_dim3 balcom_dimhc23
+	balcom_serv3	balcom_de3  balcom_c23	balcom_dec23 balcom_az3	balcom_pchtr3
+	
+/* Autres */
+	cout_reel
+
+;
+
+ADDEQ bottom
+
+ipc		: ipc = (coefpoidsipcvol/(coefpoidsipcvol+coefpoidsipcsj))*ipcvol + (coefpoidsipcsj/(coefpoidsipcvol+coefpoidsipcsj))*ipcsj ,
+
+
+/* COMMERCE EXTERIEUR - ENVIRONNEMENT INTERNATIONAL */
+		
+
+compit	 		: compit   = td_p7_dhde5_ch/td_p1mi_bmnahj5_ch , //Modif Base 2010 P1MI_D5 -> P1MI_BMNA5
+// Ancienne définition de compitserv (Opale 2010)
+// compitserv	: compitserv = td_p7_serv5_ch/td_p1mi_5_ch ,
+// Nouvelle définition (TQ et OM, SEC 2010)
+compitserv		: compitserv = td_p7_serv5_ch/td_p1mi_bmnahj5_ch ,
+
+compet	 		: compet		= petfx/td_p6_d5_ch ,
+compet_cout	 	: compet_cout	= csufx/csu_D1_CICE_PIB ,
+
+
+
+perf_exp	: perf_exp = td_p6_db7_ch / demmon,
+
+balcom_d3:	 	balcom_d3		= (td_p6_d3 	- 	td_p7_d3		) / 1000,
+balcom_db3: 	balcom_db3		= (td_p6_db3 	- 	td_p7_db3		) / 1000,
+balcom_az3: 	balcom_az3		= (td_p6_az3 	- 	td_p7_az3		) / 1000,
+balcom_dim3: 	balcom_dim3		= (td_p6_dim3 	- 	td_p7_dim3		) / 1000,
+balcom_dimhc23:	balcom_dimhc23	= (td_p6_dimhc23 	- 	td_p7_dimhc23		) / 1000,
+balcom_serv3: 	balcom_serv3	= (td_p6_serv3 	- 	td_p7_serv3		) / 1000,
+balcom_de3: 	balcom_de3		= (td_p6_de3 	- 	td_p7_de3		) / 1000,
+balcom_ce23: 	balcom_c23		= (td_p6_c23 	- 	td_p7_c23		) / 1000,
+balcom_dec23: 	balcom_dec23	= (td_p6_dec23 	- 	td_p7_dec23		) / 1000,
+
+balcom_pchtr3:	balcom_pchtr3	= (td_p6_pchtr3 - 	td_p7_pchtr3	) / 1000,
+
+	/* Autres variables */
+cout_reel : cout_reel = td_p51s_dhfz5_ch/TD_B1_BMNA5_CH*(txent-100*(td_p51s_dhfz5_ch/td_p51s_dhfz5_ch(-4)-1)+9),
+
+;
+
+LKORD ;
+FILEMOD mod3ch ;
+
+
+//---------------------------------------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------------------------
+//  BLOC VOLUME - TES en volume
+//---------------------------------------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------------------------
+
+USEMOD mod3ch;
+//--------------------------------------------------------------------------------------------
+//                 CHANGEMENT DES VARIABLES SOLDES
+//--------------------------------------------------------------------------------------------
+
+CHANGESYM endogenous td_pib7;  // dans le cadre comptable td_p3p sert de solde en volume
+
+CHANGESYM endogenous td_p1e_az7;
+CHANGESYM endogenous td_p1e_bmna7;
+CHANGESYM endogenous td_p1e_bmnahj7;
+
+CHANGESYM endogenous td_p6_d7;
+CHANGESYM endogenous td_p7_d7; 
+
+
+CHANGESYM endogenous td_p6_de7,		exogenous td_p6_de7_ch;	// on préfère l'exogène en volume chaîné
+CHANGESYM endogenous td_p51g_d7,	exogenous td_p51g_d7_ch;
+CHANGESYM endogenous td_p3g_d7,		exogenous td_p3g_d7_ch;
+CHANGESYM endogenous td_p6_az7,		exogenous td_p6_az7_ch;
+CHANGESYM endogenous td_p7_az7,		exogenous td_p7_az7_ch;
+
+//--------------------------------------------------------------------------------------------
+//                 VARIABLES EXOGENES
+//--------------------------------------------------------------------------------------------
+
+ADDSYM exogenous
+
+/* ------------------------------ */
+// EXOGENES DU TES
+
+/* ---------- Approche offre ---------- */
+/* P1 - Production */
+	coeffmemp7_ch
+
+/* P2 - Consommation intermédiaire */
+	coefp2az7_ch
+	coefp2eoq7_ch 
+	coefp2bmna7_ch	
+
+/* B1 - Valeur ajoutée des branches  */
+	coefb1d7_ch // determine le passage PIB-VA en volume  
+	coefb1az7_ch
+	coefb1oq7_ch // le volume de VA publique est déterminée par la masse salariale réelle des branches OQ
+
+/* ---------- Approche demande ---------- 
+
+/* P3 - Consommation Finale */
+	// td_p3g_d7_ch		
+	p3m_d7_ch_cale 	
+	coefp3pd7_ch
+		
+/* P51 - FBCF */
+	p51s_dhfz7_ch_cale
+	p51s_fz7_ch_cale
+	coefp51bd7_ch
+	// td_p51g_d7_ch	
+	p51m_d7_ch_cale
+	coefp51pd7_ch
+
+/* P6 - Exports */
+	// td_p6_az7_ch 
+	p6_dim7_ch_cale	// en volume td_p6_dimhc27_ch sert de solde en volume */
+	coefp6c27_ch
+	// td_p6_de7_ch	
+	p6_serv7_ch_cale
+	coefp6pchtr7_ch	
+
+/* P7 - Imports */
+	// td_p7_az7_ch	 
+	p7_dim7_ch_cale	//td_p7_dimhc2 sert de solde en volume
+	coefp7c27_ch
+	p7_de7_ch_cale				
+	p7_serv7_ch_cale
+	coefp7pchtr7_ch 
+;
+
+//--------------------------------------------------------------------------------------------
+//                 VARIABLES ENDOGENES
+//--------------------------------------------------------------------------------------------
+
+CHANGESYM endogenous
+	
+/* ------------------------------ */
+// ENDOGENES DU TES
+		
+/* ---------- Approche offre ---------- *
+
+/* P1 - Production */
+	/* Partage de la production BMNA marges commerciales / hors marges commerciales */
+	td_memp_bmna7
+	
+/* P2 - Consommation intermédiaire */
+	td_p2e_az7	
+	td_p2e_bmna7
+	td_p2e_oq7
+
+/* B1 - Valeur ajoutée des branches  et D231 - Impôts nets des subventions sur produits */
+ 	td_b1_az7
+	td_b1_oq7
+	td_d231_d7
+
+/* ---------- Approche demande ---------- *
+
+/* P3 - Consommation Finale */
+	// td_p3g_d7_ch EXOGENE
+	td_p3m_d7
+	td_p3p_d7
+	
+/* P5 FBC et P51 - FBCF */
+	td_p51s_dhfz7	
+	td_p51s_fz7	
+	td_p51b_d7
+	// td_p51g_d7_ch  EXOGENE
+	td_p51m_d7
+	td_p51p_d7
+
+
+/* P6 - Exports */
+	// td_p6_az7_ch EXOGENE
+	td_p6_dim7 // en volume, td_p6_dimhc27 sert de solde
+	td_p6_c27
+	// td_p6_de7_ch EXOGENE
+	td_p6_serv7
+	td_p6_pchtr7
+	
+/* P7 - Imports */
+	// td_p7_az7_ch EXOGENE				
+	td_p7_dim7  // td_p7_dimhc2 sert de solde en volume
+	td_p7_c27
+	td_p7_de7
+	td_p7_serv7
+	td_p7_pchtr7
+;
+
+//--------------------------------------------------------------------------------------------
+//                 AJOUT D'EQUATIONS
+//--------------------------------------------------------------------------------------------
+
+// On définit ici les équations de comportement sous la forme de modèles à correction d'erreur
+// Les coefficients de long terme ne sont pas rééstimés ici et correspondent à ceux du document de travail Opale
+// Les coefficients de court terme sont rééstimés pour toutes les équations
+
+ADDEQ bottom
+
+/* ---------- Approche offre ---------- */
+
+	/* P1 - Production */
+	/* Partage de la production BMNA marges commerciales / hors marges commerciales */
+td_memp_bmna7_ch	: td_memp_bmna7_ch	= coeffmemp7_ch		* td_b1_d7_ch ,
+
+	/* P2 - Consommation intermédiaire */
+td_p2e_az7_ch 		: td_p2e_az7_ch		= coefp2az7_ch		* td_b1_d7_ch ,
+td_p2e_bmna7_ch 	: td_p2e_bmna7_ch	= coefp2bmna7_ch	* td_b1_bmna7_ch ,
+td_p2e_oq7_ch 		: td_p2e_oq7_ch		= coefp2eoq7_ch		* td_p3g_d7_ch ,
+
+	/* B1 - Valeur ajoutée des branches  et  D231 - Impôts nets des subventions sur produits */
+td_d231_d7_ch		: td_b1_d7_ch		= coefb1d7_ch		* td_pib7_ch , 
+td_b1_az7_ch 		: td_b1_az7_ch		= coefb1az7_ch		* td_b1_d7_ch ,
+td_b1_oq7_ch 		: td_b1_oq7_ch		= coefb1oq7_ch		* tc_d11_oq1_IPC ,  // Le volume est déterminé par la masse salariale réelle des branches OQ
+
+/* ---------- Approche demande ---------- */
+
+	/* P3 - Consommation Finale des ménages */
+	
+// td_p3g  reste exogène en volume
+td_p3m_d7_ch	:	DEL(1: LOG(td_p3m_d7_ch)) = p3md7cst'c
+							                    + p3md7balpos'c		*	balpos
+							                    + p3md7balneg'c		*	balneg
+							                    + p3md7juppos'c		*	juppos
+							                    + p3md7jupneg'c		*	jupneg
+							                    + p3md7filneg'c		*	filneg
+							                    + p3md7indic1999q3'c*	indic1999q3
+							                    + p3md7rdbr0'c		*	DEL(LOG(TD_B6_S143/TD_P3M_D5_CH))
+							                    + p3md7rdbr1'c		*	DEL(LOG(TD_B6_S143/TD_P3M_D5_CH))(-1)
+												+ p3md7tcho0'c		*	DEL(TCHO)							
+												+ p3md7vs0'c		*	DEL(TEMPVS1)
+												+ mup3md7'c			*	(			
+													LOG(td_p3m_d7_ch(-1)) -	p3m_d7_ch_cale(-1)
+													- 1 * LOG(TD_B6_S143(-1)/TD_P3M_D5_CH(-1))
+																		)
+												+ DEL(p3m_d7_ch_cale),
+												
+td_p3p_d7_ch 	: td_p3p_d7_ch 		= coefp3pd7_ch		* td_p3g_d7_ch ,					
+		
+					
+	/* P51 - FBCF */
+
+// FBCF hors construction des SNF
+////Equation en dur car cette équation est instrumentée (2SLS) et la réestimation en TROLL peut être instable.
+td_p51s_dhfz7_ch : DEL(LOG(td_p51s_dhfz7_ch)) = -0.002801
+					+ 0.257006			*	(DEL(LOG(td_p51s_dhfz7_ch(-2)))-DEL(p51s_dhfz7_ch_cale(-2)))
+                    - 0.592343			*	DEL(LOG(td_p51s_dhfz5_ch/TD_B1_BMNA5_CH))
+                    + 1.363988		    * 	DEL(LOG(td_b1_bmna7_ch))
+                    + 0.002681			*	DEL(TUC) // ça devrait être DEL(TUC)(-1) => à changer
+					- 0.093789			*	(
+						LOG(td_p51s_dhfz7_ch(-1))- LOG(td_b1_bmna7_ch(-1)) -
+							(	-1.854938	-0.018102 * COUT_REEL(-1)	)
+							- p51s_dhfz7_ch_cale(-1)	)
+					+ DEL(p51s_dhfz7_ch_cale),
+
+
+
+// FBCF en construction des SNF
+td_p51s_fz7_ch	: DEL(LOG(td_p51s_fz7_ch)) = p51sfz7_cst'c
+ 					+ p51sfz7_ar1'c		* (DEL(LOG(td_p51s_fz7_ch))(-1) - DEL(p51s_fz7_ch_cale)(-1))
+                    + p51sfz7_emp0'c	* DEL(LOG(tc_emps_bmna1))
+                    + p51sfz7mu'c 		* ((LOG(td_p51s_fz7_ch)-p51s_fz7_ch_cale)(-1)
+                    					- (
+                    	                    LOG(tc_emps_bmna1)(-1)
+                    						- 0.2744837 * LOG(td_p51s_fz5_ch/pimmo)(-1)
+                    						- 0.0746919
+                    						)
+                    					)
+                    + DEL(p51s_fz7_ch_cale) ,
+
+          
+// FBCF des SF
+td_p51b_d7_ch 	: td_p51b_d7_ch 	= coefp51bd7_ch		* td_p51_d7_ch ,
+
+/*NB : pour les APU, td_p51g_d7_ch est   exogène */
+
+// FBCF des ménages
+td_p51m_d7_ch : DEL(LOG(td_p51m_d7_ch)) = 
+					0.0000208
+				+	0.610246 * DEL(LOG(td_p51m_d7_ch(-1))-p51m_d7_ch_cale(-1))
+				+   0.208469 * DEL(LOG(pimmo/td_p51m_d5_ch))
+				-	0.007541 * DEL(TCHO)
+				- 	0.078822 * (
+					LOG(td_p51m_d7_ch(-1))-p51m_d7_ch_cale(-1)-LOG(td_b6_s143(-1)/td_p51m_d5_ch(-1))
+					- (	2.159988 +	0.397879*(LOG(pimmo(-1)/td_p51m_d5_ch(-1))))
+					)
+				+DEL(p51m_d7_ch_cale),
+				
+// FBCF des ISBLSM
+td_p51p_d7_ch 	: td_p51p_d7_ch 	= coefp51pd7_ch		* td_p51g_d7_ch ,
+
+
+	/* P6 - Exports */
+
+// td_p6_az7_ch exogène 
+
+// Exports manufacturiers
+td_p6_dim7_ch	: DEL(LOG(td_p6_dim7_ch)) = p6dim7cst'c
+					+ p6dim7dm0'c  		*	DEL(LOG(DEMMON))
+					+ p6dim7emergents0'c  * DEL(LOG(PART_EMERGENTS_cpb))
+					+ mup6dim7'c	 *	(
+								LOG(td_p6_dim7_ch(-1)) - p6_dim7_ch_cale(-1)
+								- LOG(DEMMON(-1))
+								-	(	6.413988
+										+ 0.439334 * LOG(COMPET_cout(-1))
+										- 0.660085 * LOG(PART_EMERGENTS_cpb(-1))	)
+									)
+                    + DEL(p6_dim7_ch_cale),
+
+
+td_p6_c27_ch	: td_p6_c27_ch		= coefp6c27_ch		* td_p6_dim7_ch,
+
+
+// Exports de services
+td_p6_serv7_ch : DEL(LOG(td_p6_serv7_ch)) = 	p6serv7cst'c
+									        	+ p6serv7ar1'c		*	(DEL(LOG(td_p6_serv7_ch))(-1) - DEL(p6_serv7_ch_cale)(-1))
+									        	+ p6serv7demmon0'c	*	DEL(LOG(demmon))
+									        	+ mup6serv7'c		*	(
+															LOG(td_p6_serv7_ch(-1)) - LOG(demmon(-1))- p6_serv7_ch_cale(-1)	- 
+																 (2.1310096
+																 + 0.5645842 * LOG(compet_cout(-1))
+																 -0.1731084 * LOG(part_emergents_cpb)(-1)
+																 )
+																 		)
+									        	+ DEL(p6_serv7_ch_cale),
+
+// Correction territoriale
+td_p6_pchtr7_ch : td_p6_pchtr7_ch	= coefp6pchtr7_ch	* td_p6_d7_ch,    
+
+
+	/* P7 - Imports */
+
+// Imports manufacturiers
+td_p7_dim7_ch : DEL(LOG(td_p7_dim7_ch)) = p7dim7cst'c
+        	+ p7dim7ar1'c	*	(DEL(LOG(td_p7_dim7_ch))(-1) - DEL(p7_dim7_ch_cale)(-1))
+        	+ p7dim7p3'c	*	DEL(LOG(TD_P3M_D7_CH))
+        	+ p7dim7p5'c	*	DEL(LOG(TD_P5_d7_CH))
+        	+ p7dim7p6'c	*	DEL(LOG(TD_P6_D7_CH))
+        	+ mup7dim7'c	*	(
+							LOG(td_p7_dim7_ch(-1))- p7_dim7_ch_cale(-1)
+							- LOG(TD_RNT_D7_CH(-1))
+								-  (-0.962704
+									- 0.302614 * LOG(COMPIT)(-1)
+									+ 0.734846 * LOG(ouv_OCDE)(-1)
+									)
+								)			
+        	+ DEL(p7_dim7_ch_cale), 
+
+// Imports d'énergie
+td_p7_c27_ch		: td_p7_c27_ch		= coefp7c27_ch		* td_p7_dim7_ch,
+
+td_p7_de7_ch		: DEL(LOG(td_p7_de7_ch)) = 	p7de7cst'c
+												+ p7de7ar1'c * (DEL(LOG(td_p7_de7_ch(-1)))-DEL(p7_de7_ch_cale(-1)))
+												+ p7de7dum09'c * DEL(dummy2009q1plus) //Rupture en niveau
+												+ p7de7dum11'c * dummy2011q1 //Dummy pour le blocage du port de Marseille
+												+ mup7de7'c * 
+														(LOG(TD_P7_de7_ch)(-1) - p7_de7_ch_cale(-1) - ( //relation LT en dur
+																-3.1576300
+																+ LOG(td_dint_d7_ch)(-1)
+																- 0.1288289 * dummy2009q1plus(-1)
+																- 0.1040831 * LOG(100*td_p7_de5_ch(-1)/TD_P1E_BMNAHJ5_CH(-1))
+																)
+														)
+												+ DEL(p7_de7_ch_cale),
+// Imports de services
+td_p7_serv7_ch : DEL(LOG(td_p7_serv7_ch)) = p7serv7cst'c
+        	+ p7serv7ar1'c	*	(DEL(LOG(td_p7_serv7_ch)) - DEL(p7_serv7_ch_cale))(-1)
+        	+ p7serv7ar2'c	*	(DEL(LOG(td_p7_serv7_ch)) - DEL(p7_serv7_ch_cale))(-2)
+        	+ p7serv7rnt1'c	*	DEL(LOG(TD_RNT_D7_CH))(-1)
+        	+ mup7serv7'c	*	(
+								LOG(td_p7_serv7_ch)(-1)- p7_serv7_ch_cale(-1)
+									-(
+										LOG(TD_RNT_D7_CH)(-1)
+									 	- 4.269267
+									 	- 0.578354 * LOG(compitserv)(-1)
+									 	+ 0.007085 * temps78(-1)
+							 		)
+								)
+        	+ DEL(p7_serv7_ch_cale),       
+        	 	
+// Correction territoriale
+td_p7_pchtr7_ch		: td_p7_pchtr7_ch	= coefp7pchtr7_ch	* td_p7_d7_ch,  
+
+;
+
+LKORD ;
+FILEMOD mod3ch ;
+
+PRTMOD DECLARATIONS 'n ;
+
+
+
+//---------------------------------------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------------------------
+//  BLOC PRIX
+//---------------------------------------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------------------------
+
+USEMOD mod3ch ;
+
+CHANGESYM endogenous td_pib3;  // dans le cadre comptable la conso des ISBLSM (td_p3p) sert de solde en volume
+
+CHANGESYM endogenous td_p1e_bmna3;
+
+CHANGESYM endogenous td_p6_d3;
+CHANGESYM endogenous td_p7_d3;
+
+CHANGESYM endogenous td_p6_az3,		exogenous td_p6_az5_ch;
+CHANGESYM endogenous td_p7_az3,		exogenous td_p7_az5_ch;
+
+//--------------------------------------------------------------------------------------------
+//                 VARIABLES EXOGENES
+//--------------------------------------------------------------------------------------------
+
+ADDSYM exogenous
+
+/* ------------------------------ */
+// EXOGENES DU TES
+
+/* ---------- Approche offre ---------- */
+/* P1 - Production */
+	p1_mi5_ch_cale
+
+/* P2 - Consommation intermédiaire */
+	coefp2d5_ch
+	p2_bmna5_ch_cale
+	coefp2eoq5_ch
+
+/* B1 - Valeur ajoutée des branches */ 
+	coefb1az5_ch
+	coefb1oq5_ch
+	d231_d3_cale 		
+
+/* ---------- Approche demande ---------- */
+
+/* P3 - Consommation Finale */
+	coefp3gd5_ch
+	p3m_d5_ch_cale
+	coefp3pd5_ch
+		
+/* P51 - FBCF */
+	coefp51sfz5_ch
+	p51s_dhfz5_ch_cale
+	coefp51bd5_ch
+	coefp51gd5_ch
+	coefp51m5_ch
+	coefp51pd5_ch	
+	 			
+
+/* P6 - Exports */
+	// td_p6_az5_ch exogène
+	p6_dimhC25_ch_cale		
+	p6_c25_ch_cale
+	coefp6de5_ch
+	coefp6serv5_ch
+	coefp6pchtr5_ch
+
+/* P7 - Imports */
+	// td_p7_az5_ch exogène 
+	p7_dimhC25_ch_cale		
+	p7_c25_ch_cale
+	p7_de5_ch_cale
+	coefp7serv5_ch
+	coefp7pchtr5_ch
+	tendp2bmna5
+;
+
+//--------------------------------------------------------------------------------------------
+//                 VARIABLES ENDOGENES
+//--------------------------------------------------------------------------------------------
+
+CHANGESYM endogenous
+	
+/* ------------------------------ */
+// ENDOGENES DU TES
+
+		
+/* ---------- Approche offre ---------- *
+
+/* P1 - Production */
+	/* Marché intérieur */
+	td_p1e_bmnahj3	
+
+/* P2 - Consommation intermédiaire */
+	td_p2e_az3
+	td_p2e_bmna3
+	td_p2e_oq3
+
+/* B1 - Valeur ajoutée des branches  et D231 - Impôts nets des subventions sur produits */    	 
+	td_b1_az3
+	td_b1_oq3
+	td_d231_d3 // td_d231_d3 Remis en endogène pour faire des variantes
+
+/* ---------- Approche demande ---------- *
+
+/* P3 - Consommation Finale */
+	td_p3g_d3
+	td_p3m_d3
+	td_p3p_d3
+	
+/* P5 FBC et P51 - FBCF */
+	td_p51s_dhfz3	
+	td_p51s_fz3
+	td_p51b_d3		
+	td_p51g_d3
+	td_p51m_d3	
+	td_p51p_d3
+	
+/* P6 - Exports */
+	td_p6_dimhc23	 
+	td_p6_c23 
+	td_p6_de3
+	td_p6_serv3
+	td_p6_pchtr3
+	
+/* P7 - Imports */
+	td_p7_dimhc23  
+	td_p7_c23
+	td_p7_de3
+	td_p7_serv3
+	td_p7_pchtr3
+;
+
+ADDSYM endogenous p6_dim5_ch_cale p7_dim5_ch_cale; 
+
+//--------------------------------------------------------------------------------------------
+//                 AJOUT D'EQUATIONS
+//--------------------------------------------------------------------------------------------
+
+ADDEQ bottom
+
+/* ---------- Approche offre ---------- */
+
+	/* P1 - Production */
+
+	/* Marché intérieur */
+
+td_p1mi_bmnahj5_ch 	: DEL(LOG(td_p1mi_bmnahj5_ch)) = p1d5cst'c
+			+ p1mi5ar1'c		* (DEL(LOG(td_p1mi_bmnahj5_ch)) - DEL(p1_mi5_ch_cale))(-1)
+			+ p1mi5ar3'c		* (DEL(LOG(td_p1mi_bmnahj5_ch)) - DEL(p1_mi5_ch_cale))(-3)
+			+ p1micsud0'c		* DEL(LOG(csu_D1_D239_p1_bmna)) 
+			+ p1micuibmnad0'c	* DEL(1:LOG(cui_p1_bmna))
+			+ mup1mid5'c * (
+					LOG(td_p1mi_bmnahj5_ch(-1)) - p1_mi5_ch_cale(-1)
+						- ( // relation de long terme en dur)
+							LOG((csu_D1_D239_p1_bmna(-1)+cui_p1_bmna(-1)))
+							+ 4.754381
+							+ 0.000625 * temps78(-1)
+							- 0.001205 * tendP1mi(-1) 
+							)
+					)
+			+DEL(p1_mi5_ch_cale),
+
+	/* P2 - Consommation intermédiaire */
+td_p2e_az5_ch 	: td_p2e_bmna5_ch = coefp2d5_ch*td_p2e_d5_ch,  /* solde implicite sur les prix de ci de la branche AZ */
+
+td_p2e_bmna5_ch 	: DEL(LOG(td_p2e_bmna5_ch)) = p2bmna5cst'c
+	+ p2bmna5ar1'c * (DEL(LOG(td_p2e_bmna5_ch(-1)))-DEL(p2_bmna5_ch_cale(-1)))
+	+ p2bmna5p7dhnrj5d0'c * DEL(LOG(td_p7_dhdec25_ch))
+	+ p2bmna5p7nrj5d0'c * DEL(LOG(TD_P7_DEC25_CH))
+	+ mup2bmna5'c * (
+				LOG(td_p2e_bmna5_ch(-1)) - p2_bmna5_ch_cale(-1) - (
+						0.779428 * LOG(TD_P1MI_BMNAHJ5_CH(-1)) + (1-0.779428) * LOG(TD_P7_D5_CH(-1)) + 0.001750 * TENDP2BMNA5(-1) - 0.010876
+						)
+					)
+	+ DEL(p2_bmna5_ch_cale),
+
+td_p2e_oq5_ch 	: td_p2e_oq5_ch		= coefp2eoq5_ch		* td_p3g_d5_ch ,
+
+
+	/* B1 - Valeur ajoutée des branches  et  D231 - Impôts nets des subventions sur produits */
+
+td_b1_az5_ch 	: td_b1_az5_ch		= coefb1az5_ch	* td_b1_d5_ch ,
+td_b1_oq5_ch	: td_b1_oq5_ch		= coefb1oq5_ch	* td_p3g_d5_ch ,
+td_d231_d5_ch_eco : DEL(LOG(td_d231_d3)) = d231d3cst'c
+                    + d231d3ar2'c		*	(DEL(LOG(td_d231_d3(-2)))-DEL(d231_d3_cale(-2)))
+                    + d231d3p3md3'c		*	DEL(LOG(td_p3m_d3))
+					+ d231d3p51d3'c		*	DEL(LOG(td_p51_d3))
+					+ mud231d3'c			*	(			
+						LOG(td_d231_d3(-1))-LOG(td_pib3(-1))	- d231_d3_cale(-1)
+												)
+					+ DEL(d231_d3_cale),
+
+/* ---------- Approche demande ---------- 
+
+	/* P3 - Consommation Finale */
+td_p3g_d5_ch 	: td_p3g_d5_ch	 	= coefp3gd5_ch		* ipcsj ,
+td_p3m_d5_ch	: LOG(td_p3m_d5_ch) = LOG(ipc) + p3m_d5_ch_cale,
+td_p3p_d5_ch 	: td_p3p_d5_ch 		= coefp3pd5_ch		* td_p3g_d5_ch ,
+
+	/* P5 FBC - et P51 - FBCF */
+td_p51s_dhfz5_ch : DEL(LOG(td_p51s_dhfz5_ch)) = p51sd5cst'c
+											+ p51sd5ar1'c * DEL(LOG(td_p51s_dhfz5_ch)(-1)-  p51s_dhfz5_ch_cale(-1))
+										   	+ p51sd5p1mi0'c * DEL(LOG(td_p1mi_bmnahj5_ch))
+										   	+ p51sd5p1mi4'c * DEL(LOG(td_p1mi_bmnahj5_ch))(-4)
+										   	+ p51sd5p7d50'c * DEL(LOG(td_p7_dhdeC25_ch))
+											+ mup51sd5'c * ( LOG(td_p51s_dhfz5_ch(-1)) - p51s_dhfz5_ch_cale(-1) -
+																(
+																	0.478054*LOG(td_p1mi_bmnahj5_ch(-1)) + (1-0.478054)*LOG(td_p7_dhdeC25_ch(-1)))
+																)
+										    + DEL(p51s_dhfz5_ch_cale),
+    
+td_p51s_fz5_ch 	: td_p51s_fz5_ch 	= coefp51sfz5_ch	* td_p51s_dhfz5_ch ,
+td_p51b_d5_ch 	: td_p51b_d5_ch 	= coefp51bd5_ch		* td_p51_d5_ch ,
+td_p51g_d5_ch 	: td_p51g_d5_ch	 	= coefp51gd5_ch		* td_p1mi_bmnahj5_ch ,
+td_p51m_d5_ch 	: td_p51m_d5_ch 	= coefp51m5_ch		* td_p3m_d5_ch ,
+td_p51p_d5_ch 	: td_p51p_d5_ch 	= coefp51pd5_ch		* td_p51g_d5_ch ,
+
+	/* P6 - Exports */
+
+td_p6_dimhc25_ch  :  DEL(LOG(td_p6_dimhc25_ch)) = p6dimhc25cst'c 
+									+ p6dimhc25pe0'c * DEL(LOG(petfx)) 
+									+ p6dimhc25ar1'c * (DEL(LOG(td_p6_dimhc25_ch))(-1) - DEL(p6_dimhc25_ch_cale)(-1) )
+									+ mup6dimhc25'c  * 
+											(
+												LOG(td_p6_dimhc25_ch(-1)) - p6_dimhc25_ch_cale(-1)
+													-(
+														1.1376259
+														+ (1-0.6211299)*LOG(petfx)(-1)
+														+ 0.6211299*LOG(td_p1mi_bmnahj5_ch)(-1)
+														- 0.0037468 * temps78(-1)
+													)
+											)
+									+DEL(p6_dimhc25_ch_cale) ,
+
+td_p6_dim5_ch_alt :  DEL(LOG(td_p6_dim5_ch)) = p6dim5cst'c 
+											+ p6dim5pe0'c * DEL(LOG(petfx)) 
+											+ p6dim5ar1'c * (DEL(LOG(td_p6_dim5_ch(-1))) - DEL(p6_dim5_ch_cale)(-1))
+											+ mup6dim5'c  * 
+													(LOG(td_p6_dim5_ch(-1)) - p6_dim5_ch_cale(-1)
+															-(
+																0.352685
+																+ (1-0.645295)*LOG(petfx)(-1)
+																+ 0.645295*LOG(td_p1mi_bmnahj5_ch)(-1)
+																- 0.003345 * temps78(-1)
+															)
+													)
+											+DEL(p6_dim5_ch_cale) ,
+					
+
+td_p6_c25_ch: DEL(LOG(td_p6_c25_ch)) = p6c25cst'c
+									+ p6c25bareu0'c * DEL(1: LOG(baril_eu))
+									+ p6c25bareu1'c * DEL(1: LOG(baril_eu))(-1)
+									+ mup6c25'c * 
+											(LOG(TD_p6_c25_ch)(-1) - p6_c25_ch_cale(-1) - ( 
+													1.2691946
+													+ 0.8190017 * LOG(baril_eu)(-1)
+													)
+											)
+									+ DEL(p6_c25_ch_cale),
+
+td_p6_de5_ch    : td_p6_de5_ch		=  coefp6de5_ch		* td_p3m_d5_ch,
+
+td_p6_serv5_ch	: td_p6_serv5_ch	= coefp6serv5_ch	* td_p1mi_bmnahj5_ch,
+
+td_p6_pchtr5_ch : td_p6_pchtr5_ch 	= coefp6pchtr5_ch	* td_p3m_d5_ch ,
+
+
+	/* P7 - Imports */
+
+td_p7_dimhc25_ch  :  DEL(LOG(td_p7_dimhc25_ch)) = p7dimhc25cst'c 
+									+ p7dimhc25pe0'c * DEL(LOG(petfm)) 
+									+ p7dimhc25ar1'c * (DEL(LOG(td_p7_dimhc25_ch))(-1) - DEL(p7_dimhc25_ch_cale)(-1))
+									+ mup7dimhc25'c  * 
+											(LOG(td_p7_dimhc25_ch(-1)) - p7_dimhc25_ch_cale(-1)
+													-(
+														1.8846238
+														+ (1-0.3247679)*LOG(petfm)(-1)
+														+ 0.3247679*LOG(td_p1mi_bmnahj5_ch)(-1)
+														- 0.0044649 * temps78(-1)
+													)
+											)
+									+DEL(p7_dimhc25_ch_cale) ,
+
+td_p7_dim5_ch_alt 	:  DEL(LOG(td_p7_dim5_ch)) = p7dim5cst'c 
+					+ p7dim5pe0'c * DEL(LOG(petfm)) 
+					+ p7dim5ar1'c * (DEL(LOG(td_p7_dim5_ch(-1))) - DEL(p7_dim5_ch_cale)(-1))
+					+ mup7dim5'c  * (LOG(td_p7_dim5_ch(-1)) - p7_dim5_ch_cale(-1) -
+							(0.379918
+							+ (1-0.381817)*LOG(petfm)(-1)
+							+ 0.381817*LOG(td_p1mi_bmnahj5_ch)(-1)
+							- 0.003963 * temps78(-1))
+										)
+					+DEL(p7_dim5_ch_cale) ,
+
+
+
+td_p7_c25_ch		: 	DEL(LOG(td_p7_c25_ch)) = p7c25cst'c
+												+ p7c25bareu0'c * DEL(1: LOG(baril_eu))
+												+ mup7c25'c * 
+														(LOG(TD_P7_c25_ch)(-1) - p7_c25_ch_cale(-1) - ( //relation LT en dur
+																1.2435768
+																+ 0.8291449 * LOG(baril_eu)(-1)
+																)
+														)
+												+ DEL(p7_c25_ch_cale),
+
+td_p7_de5_ch		: DEL(LOG(td_p7_de5_ch)) = p7de5cst'c
+											+ p7de5ar2'c * (DEL(LOG(td_p7_de5_ch(-2)))-DEL(p7_de5_ch_cale(-2)))
+											+ p7de5ar3'c * (DEL(LOG(td_p7_de5_ch(-3)))-DEL(p7_de5_ch_cale(-3)))
+											+ p7de5bareu0'c * DEL(1: LOG(baril_eu))
+											+ p7de5bareu3'c * DEL(1: LOG(baril_eu(-3)))
+											+ mup7de5'c * 
+													(LOG(TD_P7_de5_ch)(-1) - p7_de5_ch_cale(-1)
+													- ( //relation LT en dur
+															1.216277
+															+ 0.841455 * LOG(baril_eu)(-1)
+															)
+						)
+											+ DEL(p7_de5_ch_cale) ,
+td_p7_serv5_ch	: td_p7_serv5_ch	= coefp7serv5_ch 	* td_p1mi_bmnahj5_ch,
+
+td_p7_pchtr5_ch : td_p7_pchtr5_ch	= coefp7pchtr5_ch	* td_p3m_d5_ch ,
+
+;
+
+LKORD ;
+FILEMOD mod3ch ;
+
+PRTMOD DECLARATIONS 'x 'n ;
+
+
+//---------------------------------------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------------------------
+//  STOCKS
+//---------------------------------------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------------------------
+
+
+USEMOD mod3ch;
+
+// Les variations de stocks n'existant pas en volumes/prix chaînés,
+// Pour ces postes, on prefére employer les "ratios" (logarithme des ratios PIB/PIB hors stocks) plutôt que les niveaux
+ADDSYM 		exogenous 	p523_d7_cale;
+CHANGESYM	endogenous	td_p523_d7;
+
+CHANGESYM 	exogenous 	p523_d5_log_ratio; 
+CHANGESYM	endogenous	td_p523_d3;
+
+ADDEQ bottom
+// Contribution des stocks à la croissance du PIB
+
+p523_d7_cale : p523_d7_log_ratio = p523d7cst'c
+							+ p523d7ar1'c  * (p523_d7_log_ratio(-1)-p523_d7_cale(-1))
+							+ p523d7dihs1'c * DEL(1: LOG(td_dinths_d7_ch(-1)))	
+							+ p523d7p6db_1'c * DEL(1: LOG(td_p6_db7_ch(-1)))
+							+ p523d7p6db_2'c * DEL(1: LOG(td_p6_db7_ch(-2)))
+							+ p523_d7_cale   ;
+
+
+LKORD ;
+FILEMOD mod3ch ;
+PRTMOD DECLARATIONS 'N 'X ;
+
+
+
+//---------------------------------------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------------------------
+//  BLOC TEE
+//---------------------------------------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------------------------
+
+USEMOD mod3ch ;
+
+CHANGESYM endogenous tc_emp_d1,			exogenous tc_emps_az1;  // dans le cadre comptable tc_emps_az1 sert de solde pour l'emploi salarié
+CHANGESYM endogenous td_b6_s143,		exogenous td_b6aut_s143; 
+
+//--------------------------------------------------------------------------------------------
+//                 VARIABLES EXOGENES
+//--------------------------------------------------------------------------------------------
+
+ADDSYM exogenous
+/* ------------------------------ */
+// EXOGENES DU TEE
+	
+/* Emploi - Salaires */
+	tcho  	tc_ls_d1	emps_bmna1_cale coeftempart  emploi_estel_cale coefempsd1
+	coefd11az3 smpt_bmna_cale
+	coefd12az3 coefd12bmna3 coefd12oq3
+	 smb_cale
+	
+/* Bouclage du RDB (Revenu disponible brut - B6) des ménages  */
+	coefd11b2s14r3 coefb6fins143 d5_s14e3_cale coefd61s14e3 d62_s14r3_cale 
+
+/* Prix à la consommation  */
+	ipcsj_cale	  ipcvol_cale	
+
+/* Autres  */
+	coeftdec
+	coefprodk				
+	trend2011q3 trend2000q4 trend1990q2
+	rupt2008q4	
+	trim			
+;
+
+//--------------------------------------------------------------------------------------------
+//                 VARIABLES ENDOGENES
+//--------------------------------------------------------------------------------------------
+
+CHANGESYM endogenous
+	
+/* Emploi - Salaires */
+	tc_ls_d1 tc_emps_d1	 tc_emps_bmna1 tc_emps_bmna7 emploi_estel 
+	tc_d11_az3 tc_d11_bmna3
+	tc_d12_az3 tc_d12_bmna3 tc_d12_oq3
+	smb	
+	
+/* Bouclage du RDB (Revenu disponible brut - B6) des ménages  */
+	td_d11b2_s14r3 tc_b6fin_s143 tc_d5_s14e3 tc_d61_s14e3 tc_d62_s14r3 
+ 	
+/* Prix à la consommation  */
+	ipc		ipcsj
+		
+/* Autres endogènes  */
+	td_k_bmna7_ch 
+	tuc
+
+;
+
+ADDSYM endogenous d62_s14r3_cale_alt;  /* cale de l'équation alternative */
+ADDSYM endogenous wd_cale; // ajout de la cale de wage-drift en relecture
+
+//--------------------------------------------------------------------------------------------
+//                 AJOUT D'EQUATIONS
+//--------------------------------------------------------------------------------------------
+
+REPEQ tc_emps_d1,  tc_emps_d1 : tc_emps_d1 = coefempsd1*tc_emps_bmna1;
+DELSYM  tc_emps_az1 tc_emps_oq1;
+
+
+ADDEQ bottom
+
+	/* Emploi  - Salaires */
+tc_d11_az3 		: tc_d11_az3	= coefd11az3	* td_b1_az3 ,
+tc_d12_az3 		: tc_d12_az3	= coefd12az3	* tc_d11_az3 ,
+tc_d12_bmna3 	: tc_d12_bmna3	= coefd12bmna3	* tc_d11_bmna3 ,
+tc_d12_oq3 		: tc_d12_oq3	= coefd12oq3	* tc_d11_oq3 ,
+tcho 			: tcho 			= 100*(tc_ls_d1-tc_emp_d1)/tc_ls_d1 , 
+tc_emps_bmna7	: tc_emps_bmna7 = coeftempart * tc_emps_bmna1 ,
+
+
+// L'emploi salarié BMNA (en moyenne trim) est prévu à partir de l'emploi ESTEL, qui est connu en fin de trimestre, d'où la moyenne figurant dans l'équation ci-dessous.
+
+tc_emps_bmna1 	: LOG(tc_emps_bmna1)= LOG((emploi_estel+emploi_estel(-1))/2) + emps_bmna1_cale , // Emploi salarié des BMNA
+
+emploi_estel		: DEL(LOG(emploi_estel*tc_emps_bmna7/tc_emps_bmna1 - pe)) =	empcst'c
+									+ empb1vol0'c	* DEL(LOG(td_b1_bmna7_ch))
+									+ empar1'c		* (DEL(LOG(emploi_estel*tc_emps_bmna7/tc_emps_bmna1 - pe))(-1) - DEL(emploi_estel_cale)(-1))
+									+ empar2'c		* (DEL(LOG(emploi_estel*tc_emps_bmna7/tc_emps_bmna1 - pe))(-2) - DEL(emploi_estel_cale)(-2))
+									+ muemp'c  		* (LOG(emploi_estel*tc_emps_bmna7/tc_emps_bmna1 - pe)(-1) - emploi_estel_cale(-1) - 
+													(
+													LOG(td_b1_bmna7_ch)(-1)
+													- 0.0007545	/ 0.1155	* temps78(-1)     	// Tendance de productivité début de période
+													+ 0.0002383 / 0.1155	* Trend1990Q2(-1)	// La tendance de productivité s'affaiblit peu à peu
+													+ 0.0001069 / 0.1155	* Trend2000Q4(-1)
+													+ 0.0017930 / 0.1155	* Rupt2008Q4(-1)		
+													+ 0.0005				* Trend2011Q3(-1)	// Rupture de productivité conventionnelle (calibrée, pas estimée)										
+													)
+												)
+									+ DEL(emploi_estel_cale),	
+	
+//
+// Salaire moyen par tête
+
+smpt_bmna  : DEL(LOG(smpt_bmna))=   smpt_bmnacst'c
+          //+ smpt_bmnaar1'c * (DEL(LOG(smpt_bmna(-1)))-DEL(smpt_bmna_cale(-1))) // Terme AR non significatif finalement non retenu dans la spécification finale
+          + smptipc0'c * DEL(LOG(IPC))
+          + smptipc1'c * DEL(LOG(IPC(-1)))
+          + smptprod0'c * DEL(LOG(TD_B1_BMNA7_CH/TC_EMPS_BMNA1))
+          + smpttcho0'c * DEL(TCHO)
+          + smptcrise'c * DEL(indiccrise)
+          + musmpt'c * (
+                		LOG(smpt_bmna(-1)) - smpt_bmna_cale(-1) - 
+                			(
+                				LOG(IPC(-1))
+                				+ 0.25 * (LOG(TD_B1_BMNA7_CH/TC_EMPS_BMNA1)(-1) + LOG(TD_B1_BMNA7_CH/TC_EMPS_BMNA1)(-2) + LOG(TD_B1_BMNA7_CH/TC_EMPS_BMNA1)(-3) + LOG(TD_B1_BMNA7_CH/TC_EMPS_BMNA1)(-4) )
+                				+ 0.029176 * indiccrise(-1)
+                    		)
+                		)                         
+          + DEL(smpt_bmna_cale),
+
+
+	
+// Salaire mensuel de base			
+smb : 	DEL(1:LOG(smb))=smbcst'c
+				+smbar4'c*DEL(1:LOG(smb)-smb_cale)(-4)
+				+smbtcho1'c*DEL(1:tcho)(-1)
+				+smbech1'c*DEL(1:LOG(ipc)-LOG(td_b1_bmna5_ch))(-1)
+				+musmb'c*(LOG(smb)-smb_cale)(-1)
+				+musmbpva'c*LOG(td_b1_bmna5_ch)(-1)
+				+musmbech'c*(LOG(ipc)-LOG(td_b1_bmna5_ch))(-1)
+				+musmbtrend'c*temps78
+				+musmbt1'c*indic_t1
+				+musmbt2'c*indic_t2
+				+musmbt3'c*indic_t3
+				+DEL(1:smb_cale),
+	
+	
+// Wage drift (écart entre le salaire mensuel de base et le smpt_bmna)	
+wd : DEL(LOG(wd))=wdcst'c
+			+wdva'c*DEL(LOG(td_b1_bmna7_ch))
+			+muwdt1'c*indic_t1
+			+muwdt2'c*indic_t2
+			+muwdt3'c*indic_t3
+			+DEL(1:wd_cale),
+
+
+
+/* Bouclage du RDB (Revenu disponible brut - B6) des ménages  */
+
+tc_b6fin_s143	: tc_b6fin_s143 = coefb6fins143 * td_pib3,
+
+td_d11b2_s14r3	: td_d11b2_s14r3 = coefd11b2s14r3 * tc_d11_bmna3,
+
+tc_d5_s14e3		: DEL(LOG(tc_d5_s14e3)) = d5s14e3cst'c
+										+ d5s14e3dummy98'c  *	DEL(dummy1998q1plus)
+										+ d5s14e3rdbact0'c  *  DEL(LOG(td_b6act_s143(-4)))
+										+ mud5s14e3'c	 *	(
+													LOG(tc_d5_s14e3(-1)) - d5_s14e3_cale(-1)
+														- (
+																- 2.196468
+																+ LOG(td_b6act_s143(-5))
+																+ 0.278456  * dummy1998q1plus(-1)
+																+ 0.004908 * trendavant1998(-1)
+															)
+														)
+					                    + DEL(d5_s14e3_cale),
+					                    
+tc_d61_s14e3	: tc_d61_s14e3 = coefd61s14e3 * tc_d11_bmna3,
+
+tc_d62_s14r3_alt: DEL(LOG(tc_d62_s14r3)) = d62s14r3cst_alt'c
+										+ d62s14r3empsd0t_alt'c  *  DEL(LOG(tc_emps_d1))
+										+ mud62s14r3t_alt'c	 *	(
+													LOG(tc_d62_s14r3(-1)) - d62_s14r3_cale_alt(-1)
+														- (
+																-4.588489
+																+ LOG(td_pib7_ch(-1))
+																+ LOG(ipc(-1))
+																- 0.184047 * LOG(tc_emps_d1)(-1)
+															)
+														)
+					                    + DEL(d62_s14r3_cale_alt),
+					                    
+tc_d62_s14r3	:  DEL(LOG(tc_d62_s14r3)) = DEL(d62_s14r3_cale)
+							+ d62s14r3cst'c
+							+ (trim-1)*(trim-3)*(trim-4)/2* 17.4/100*((1/3*IPC(-1)+IPC(-2)+IPC(-3)+IPC(-4)+2/3*IPC(-5))/(1/3*IPC(-5)+IPC(-6)+IPC(-7)+IPC(-8)+2/3*IPC(-9))-1) // prestations indexées en avril
+							+ (trim-1)*(trim-2)*(trim-3)/6* 64.7/100*((1/3*IPC(-1)+IPC(-2)+IPC(-3)+IPC(-4)+2/3*IPC(-5))/(1/3*IPC(-5)+IPC(-6)+IPC(-7)+IPC(-8)+2/3*IPC(-9))-1) // prestations indexées en octobre/novembr							+ 7.2/100*(0.5*DEL(LOG(IPC))-4.0*DEL(LOG(tc_emps_bmna1))+0.5*DEL(LOG(smpt_bmna))) // prestation chômage
+							+ 7.2/100		 * (0.5*DEL(LOG(IPC))-4.0*DEL(LOG(tc_emps_bmna1))+0.5*DEL(LOG(smpt_bmna))) // prestation chômage
+							+ mud62s14r3a'c	 * (LOG(tc_d62_s14r3(-1))-d62_s14r3_cale(-1))
+							+ mud62s14r3b'c	 * temps78(-1),
+
+
+		/* Prix à la consommation  */
+
+// Inflation sous-jacente
+// Spécification mai 2016
+ipcsj : DEL(LOG(ipcsj))=	ipcc0'c
+							+ ipcsjindgal'c * ind_galland
+							+ ipcsjar1'c	* ( DEL(LOG(ipcsj)(-1)) - DEL(ipcsj_cale(-1)) )
+							+ ipcsjmu1'c	* (LOG(ipcsj)(-1)  - ipcsj_cale(-1))
+							- ipcsjmu2'c	* LOG(td_p1mi_bmnahj5_ch)(-1)
+							+ (- ipcsjmu1'c + ipcsjmu2'c)	* LOG(td_p7_dhdec25_ch)(-1)
+							+ DEL(ipcsj_cale),
+
+// Composante volatile de l'IPC
+
+// Spécification mai 2016
+ipcvol: DEL(LOG(ipcvol))= ipcvolcst'c
+						  + ipcvolar3'c		* (DEL(LOG(ipcvol))(-3) - DEL(ipcvol_cale)(-3))
+						  + ipcvolbaril0'c	* DEL(LOG(baril_eu+ticpe_par_baril))
+						  + ipcvolbaril2'c	* DEL(LOG(baril_eu+ticpe_par_baril))(-2)
+						  + muipcvol'c * (
+						  		LOG(ipcvol)(-1) - ipcvol_cale(-1) - 
+						  			(
+						  				3.302787
+						  				+ (0.15) * LOG(baril_eu+ticpe_par_baril)(-1) // Poids des produits pétroliers dans l'IPC volatile
+						  				+ 0.004329 * temps78
+						  			)
+						  				)
+				 		  +DEL(ipcvol_cale),
+
+
+
+	/* AUTRES EQUATIONS */
+
+tuc 			: tuc		= coefprodk * td_b1_bmna7_ch / td_k_bmna7_ch ,
+// Cette relation est approchée
+td_k_bmna7_ch 	: td_p51s_d7_ch/1000 = td_k_bmna7_ch - td_k_bmna7_ch(-1)*(1-coeftdec/100), 
+;
+LKORD ;
+FILEMOD mod3ch ;
+PRTMOD DECLARATIONS 'N 'X ;
+
+
+//---------------------------------------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------------------------
+// ****** Estimation des paramètres des équations et des résidus ******
+//---------------------------------------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------------------------
+
+ACCESS cad type formdata id ./don3ch.frm mode r ; SEARCH cad ;
+ACCESS coefmod type formdata id ./coefnewmodch.frm mode w ; SEARCH coefmod w ;
+
+USEMOD mod3ch  ;
+
+/* TES - Volume */
+BOUNDS 1990q1 TO 2012q4 ; OLSMOD td_p3m_d7_ch ; 	FILECOEF coefmod ;   	// Estimation du court terme en Troll, long terme en dur
+
+BOUNDS 1999q1 TO 2012q4 ; OLSMOD td_p51s_fz7_ch ; 	FILECOEF coefmod ;		// Estimation du court terme en Troll, long terme en dur
+BOUNDS 1995q1 TO 2012q4 ; OLSMOD td_p6_dim7_ch ; 	FILECOEF coefmod ;  	// Estimation du court terme en Troll, long terme en dur
+BOUNDS 1995q1 TO 2012q4 ; OLSMOD td_p6_serv7_ch ; 	FILECOEF coefmod ; 		// Estimation du court terme en Troll, long terme en dur
+BOUNDS 1993q1 TO 2012q4 ; OLSMOD td_p7_dim7_ch ; 	FILECOEF coefmod ;  	// Estimation du court terme en Troll, long terme en dur
+BOUNDS 1990q1 TO 2011q4 ; OLSMOD td_p7_de7_ch ; 	FILECOEF coefmod ;      // Estimation du court terme en Troll, long terme en dur
+BOUNDS 1995q1 TO 2012q4 ; OLSMOD td_p7_serv7_ch ; 	FILECOEF coefmod ; 		// Estimation du court terme en Troll, long terme en dur
+
+/* TES - Prix */
+BOUNDS 1993q1 TO 2011q4 ; OLSMOD td_p1mi_bmnahj5_ch;FILECOEF coefmod ; 		// Estimation du court terme en Troll, long terme en dur
+BOUNDS 1993q1 TO 2012q4 ; OLSMOD td_p2e_bmna5_ch ; 	FILECOEF coefmod ;    	// Estimation du court terme en Troll, long terme en dur
+BOUNDS 1998q1 TO 2012q4;  OLSMOD td_d231_d5_ch_eco;	FILECOEF coefmod;
+BOUNDS 1993q1 TO 2011q4 ; OLSMOD td_p51s_dhfz5_ch ; FILECOEF coefmod ;		// Estimation du court terme en Troll, long terme en dur
+BOUNDS 1993q1 TO 2011q4 ; OLSMOD td_p6_dim5_ch_alt ;FILECOEF coefmod ;   	// Estimation du court terme en Troll, long terme en dur
+BOUNDS 1993q1 TO 2012q4 ; OLSMOD td_p6_dimhc25_ch ; FILECOEF coefmod ;   	// Estimation du court terme en Troll, long terme en dur
+BOUNDS 1993q2 TO 2012q4 ; OLSMOD td_p6_c25_ch ; 	FILECOEF coefmod ;   	// Estimation du court terme en Troll, long terme en dur
+BOUNDS 1993q2 TO 2011q4 ; OLSMOD td_p7_dim5_ch_alt ;FILECOEF coefmod ; 		// Estimation du court terme en Troll, long terme en dur
+BOUNDS 1993q2 TO 2012q4 ; OLSMOD td_p7_dimhc25_ch ; FILECOEF coefmod ; 		// Estimation du court terme en Troll, long terme en dur
+BOUNDS 1993q1 TO 2011q4 ; OLSMOD td_p7_c25_ch ; 	FILECOEF coefmod ;  	// Estimation du court terme en Troll, long terme en dur
+BOUNDS 1990q1 TO 2011q4 ; OLSMOD td_p7_de5_ch ; 	FILECOEF coefmod ;    	 // Estimation du court terme en Troll, long terme en dur
+
+
+/* STOCKS */
+BOUNDS 1990q1 TO 2012q4;	OLSMOD p523_d7_cale ; 	FILECOEF coefmod ; 	
+
+/* TEE */
+BOUNDS 1985q1 TO 2013q4;	OLSMOD emploi_estel ; 	FILECOEF coefmod ; 		// Equation d'emploi. C'est la spécification SEC95, réestimée sur les données SEC 2010
+BOUNDS 1995q1 TO 2012q4;	OLSMOD smpt_bmna ;		FILECOEF coefmod ;      // Estimation du court terme en Troll, long terme en dur
+BOUNDS 1990q1 TO 2011q4;	OLSMOD smb; 			FILECOEF coefmod;
+BOUNDS 1999q1 TO 2011q4;	OLSMOD wd; 				FILECOEF coefmod;
+BOUNDS 1990q1 TO 2011q2;	OLSMOD tc_d5_s14e3 ; 	FILECOEF coefmod;
+BOUNDS 1992q1 TO 2008q2;	OLSMOD tc_d62_s14r3_alt;FILECOEF coefmod;
+BOUNDS 1990q1 TO 2012q4;	OLSMOD tc_d62_s14r3;	FILECOEF coefmod;
+BOUNDS 1991q1 TO 2011q4;	OLSMOD ipcsj ; 			FILECOEF coefmod ;
+BOUNDS 1996q1 TO 2012q4;	OLSMOD ipcvol ; 		FILECOEF coefmod ;  	// Estimation du court terme en Troll, long terme en dur
+
+
+&lklimit ;
+// La commande simulate va remplacer toutes les variables endogènes du modèle par leurs valeurs prédites par les équations
+SIMULATE ;
+
+//---------------------------------------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------------------------
+// ** CALAGE A L'ENVERS DU MODELE : CALCUL DES CALES SUR LE PASSE **
+//---------------------------------------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------------------------
+
+DELACCESS all; DELSAVE all; DRANGE;
+
+ACCESS cad type formdata id ./don3ch.frm mode w ; SEARCH cad w ;
+ACCESS coefmod type formdata id ./coefnewmodch.frm mode r ; SEARCH coefmod ;
+
+// CREATION DU MODELE INVERSE
+// On inverse les endogènes et les exogènes du modèle : les cales (toutes initialisées à 0 plus haut)
+// vont être recalculées de façon à ce que les équations prévoient exactement l'observé sur le passé
+
+//DOSAVE listecale = MODSYM("policy"); 		// ancienne version
+
+DOSAVE listecale = C.(
+	/* P1 - Production */
+		"p1_mi5_ch_cale",
+	/* P2 - Consommation intermédiaire */
+		"p2_bmna5_ch_cale",
+	/* Passage - PIB-VA */
+		"d231_d3_cale",
+	/* P3 - Consommation finale */
+		"p3m_d7_ch_cale",	"p3m_d5_ch_cale",
+	/* P51 - FBCF */
+		"p51s_dhfz7_ch_cale",	"p51s_dhfz5_ch_cale",
+		"p51s_fz7_ch_cale",
+		"p51m_d7_ch_cale",
+	/* P6  - Exports */
+		"p6_dim7_ch_cale",	"p6_dim5_ch_cale",
+							"p6_dimhc25_ch_cale",
+							"p6_c25_ch_cale",
+		"p6_serv7_ch_cale",
+	/* P7  - Imports */
+		"p7_dim7_ch_cale",	"p7_dim5_ch_cale",
+							"p7_dimhc25_ch_cale",
+							"p7_c25_ch_cale",
+		"p7_de7_ch_cale",	"p7_de5_ch_cale",
+		"p7_serv7_ch_cale",
+	/* P52 et P53 -Sotck */
+		"p523_d7_cale",		"p523_d5_log_ratio",
+	/* Prix */
+		"ipcsj_cale","ipcvol_cale",
+	/* Salaires */                 
+		"smpt_bmna_cale", "smb_cale","wd_cale",
+	/* Emploi */
+		"emps_bmna1_cale", "emploi_estel_cale",
+	/* Bouclage du RDB */
+		"d5_s14e3_cale"  , "d62_s14r3_cale",  "d62_s14r3_cale_alt"
+		);
+
+//*******************************************************************************************
+// Création d'un modèle inversé "complet" cale et coefficient
+
+USEMOD mod3ch ;
+
+CHANGESYM exogenous
+
+// ---------- Approche offre ----------
+	// P1 - Production
+		td_p1e_bmnahj7_ch	td_p1e_bmnahj5_ch
+		
+	// P2 - Consommation intermédaire
+		td_p2e_d7_ch		td_p2e_d5_ch
+	 	td_p2e_bmna7_ch		td_p2e_bmna5_ch
+	 	td_p2e_oq7_ch       td_p2e_oq5_ch
+	 
+	 // B1 valeur ajoutée  - Passage - PIB-VA 
+	 	td_b1_az7_ch		td_b1_az5_ch
+		td_b1_oq7_ch		td_b1_oq5_ch
+		td_d231_d7_ch		td_d231_d5_ch
+		
+// ---------- Approche demande ----------
+
+	// P3 - Consommation finale
+							td_p3g_d5_ch //td_p3g_d7_ch deja EXOGENE
+		td_p3m_d7_ch		td_p3m_d5_ch
+		td_p3p_d7_ch		td_p3p_d5_ch
+		
+	// P51 - FBCF
+		td_p51s_dhfz7_ch	td_p51s_dhfz5_ch
+		td_p51s_fz7_ch		td_p51s_fz5_ch
+		td_p51b_d7_ch		td_p51b_d5_ch
+							td_p51g_d5_ch //td_p51g_d7_ch deja EXOGENE 
+		td_p51m_d7_ch		td_p51m_d5_ch
+		td_p51p_d7_ch		td_p51p_d5_ch 
+		
+	// P6 - Exports
+		//td_p6_az7_ch et  td_p6_az5_ch deja EXOGENE
+							td_p6_de5_ch  //td_p6_de7_ch deja EXOGENE
+		td_p6_dim7_ch		td_p6_dimhc25_ch
+		td_p6_c27_ch		td_p6_c25_ch
+		td_p6_serv7_ch		td_p6_serv5_ch
+		td_p6_pchtr7_ch		td_p6_pchtr5_ch
+		
+	// P7 - Imports
+		//td_p7_az7_ch et  td_p7_az5_ch deja EXOGENE
+		td_p7_de7_ch		td_p7_de5_ch
+		td_p7_dim7_ch		td_p7_dimhc25_ch
+		td_p7_c27_ch		td_p7_c25_ch
+		td_p7_serv7_ch		td_p7_serv5_ch	
+		td_p7_pchtr7_ch		td_p7_pchtr5_ch
+		
+	// P52 - Stocks
+		p523_d7_log_ratio	p523_d3_log_ratio
+		
+// ---------- TEE et autres variables ----------
+	// Prix
+		ipcsj ipc
+	// Salaires
+		smpt_bmna 		smb
+		tc_d11_az3              
+		tc_d12_az3 tc_d12_bmna3	tc_d12_oq3
+	// Emploi
+		tc_emps_bmna1	emploi_estel
+		tc_emps_bmna7	tc_emps_d1
+	// Bouclage du RDB
+		td_d11b2_s14r3	tc_d61_s14e3	tc_d5_s14e3	
+		tc_d62_s14r3	tc_b6fin_s143
+	// Autres
+		tuc	td_k_bmna7_ch
+;
+
+CHANGESYM endogenous
+/* ---------- Approche offre ---------- */
+	// P1 - Production
+		coeffmemp7_ch		p1_mi5_ch_cale
+
+	// P2 - Consommation intermédaire
+		coefp2az7_ch		coefp2d5_ch
+		coefp2bmna7_ch		p2_bmna5_ch_cale
+		coefp2eoq7_ch		coefp2eoq5_ch
+		
+	// B1 valeur ajoutée - Passage - PIB-VA 
+		coefb1az7_ch		coefb1az5_ch
+		coefb1oq7_ch		coefb1oq5_ch
+		coefb1d7_ch			d231_d3_cale
+
+// ---------- Approche demande ----------
+	// P3 - Consommation finale
+							coefp3gd5_ch
+		p3m_d7_ch_cale		p3m_d5_ch_cale							
+		coefp3pd7_ch		coefp3pd5_ch
+	// P51 - FBCF
+		p51s_dhfz7_ch_cale	p51s_dhfz5_ch_cale
+		p51s_fz7_ch_cale	coefp51sfz5_ch
+		coefp51bd7_ch		coefp51bd5_ch
+					    	coefp51gd5_ch 
+		p51m_d7_ch_cale		coefp51m5_ch
+		coefp51pd7_ch		coefp51pd5_ch 
+	// P6 - Exports
+							coefp6de5_ch
+		p6_dim7_ch_cale 	p6_dimhc25_ch_cale
+		coefp6c27_ch		p6_c25_ch_cale		
+		p6_serv7_ch_cale	coefp6serv5_ch
+		coefp6pchtr7_ch		coefp6pchtr5_ch
+	// P7 - Imports
+		p7_de7_ch_cale		p7_de5_ch_cale
+		p7_dim7_ch_cale		p7_dimhc25_ch_cale			/*p7_dim5_ch_cale*/
+		coefp7c27_ch		p7_c25_ch_cale
+		p7_serv7_ch_cale	coefp7serv5_ch
+		coefp7pchtr7_ch		coefp7pchtr5_ch
+	// P52 - Stocks
+		p523_d7_cale		p523_d5_log_ratio /* utilisation du log-ratio des prix */
+
+// ---------- TEE et autres variables ---------- 
+	// Prix - Salaires
+		ipcvol_cale		ipcsj_cale
+	// Salaires
+		smpt_bmna_cale		smb_cale
+		coefd11az3               
+		coefd12az3  coefd12bmna3 coefd12oq3			
+	// Emploi
+		emps_bmna1_cale		emploi_estel_cale
+		coeftempart			coefempsd1
+	// Bouclage du RDB
+		coefd11b2s14r3	coefb6fins143 d5_s14e3_cale coefd61s14e3 d62_s14r3_cale	
+	// Autres
+		coefprodk coeftdec	
+;
+
+LKORD ;
+FILEMOD invcompletemod3ch ;
+PRTMOD DECLARATIONS 'N 'X ;
+
+
+//*******************************************************************************************
+// Création d'un modèle inversé pour le recalcul des cales uniquement
+
+USEMOD mod3ch;
+CHANGESYM exogenous
+// ---------- Approche offre ----------
+	// P1 - Production
+							td_p1e_bmnahj5_ch		
+	// P2 - Consommation intermédaire
+							td_p2e_bmna5_ch	 
+	 // B1 valeur ajoutée  - Passage - PIB-VA 
+							td_d231_d5_ch
+		
+// ---------- Approche demande ----------
+	// P3 - Consommation finale
+		td_p3m_d7_ch		td_p3m_d5_ch		
+	// P51 - FBCF
+		td_p51s_dhfz7_ch	td_p51s_dhfz5_ch
+		td_p51s_fz7_ch
+		td_p51m_d7_ch
+	
+	// P6 - Exports
+		td_p6_dim7_ch		td_p6_dimhc25_ch
+							td_p6_c25_ch
+		td_p6_serv7_ch	
+	// P7 - Imports
+		td_p7_de7_ch		td_p7_de5_ch
+		td_p7_dim7_ch		td_p7_dimhc25_ch
+							td_p7_c25_ch
+		td_p7_serv7_ch
+	// P52 - Stocks
+		p523_d7_log_ratio	p523_d3_log_ratio	
+// ---------- TEE et autres variables ----------
+	// Prix
+		ipcsj 			ipc
+	// Salaires
+		smpt_bmna 			smb
+	// Emploi
+		tc_emps_bmna1	emploi_estel
+	// Bouclage du RDB
+		tc_d5_s14e3		tc_d62_s14r3
+;
+
+CHANGESYM endogenous
+// ---------- Approche offre ----------
+	// P1 - Production
+							p1_mi5_ch_cale
+	// P2 - Consommation intermédaire
+							p2_bmna5_ch_cale
+	// B1 valeur ajoutée - Passage - PIB-VA 
+							d231_d3_cale
+
+// ---------- Approche demande ----------
+	// P3 - Consommation finale
+		p3m_d7_ch_cale		p3m_d5_ch_cale							
+	// P51 - FBCF
+		p51s_dhfz7_ch_cale	p51s_dhfz5_ch_cale
+		p51s_fz7_ch_cale
+		p51m_d7_ch_cale
+
+	// P6 - Exports
+		p6_dim7_ch_cale 	p6_dimhc25_ch_cale
+							p6_c25_ch_cale		
+		p6_serv7_ch_cale
+
+	// P7 - Imports
+		p7_de7_ch_cale		p7_de5_ch_cale
+		p7_dim7_ch_cale		p7_dimhc25_ch_cale
+							p7_c25_ch_cale
+		p7_serv7_ch_cale
+
+	// P52 - Stocks
+		p523_d7_cale		p523_d5_log_ratio
+
+// ---------- TEE et autres variables ---------- 
+	// Prix - Salaires
+		ipcvol_cale			ipcsj_cale
+	// Salaires
+		smpt_bmna_cale		smb_cale
+	// Emploi
+		emps_bmna1_cale		emploi_estel_cale
+	// Bouclage du RDB
+		d5_s14e3_cale 		d62_s14r3_cale	
+;
+LKORD ;
+FILEMOD invmod3ch ;
+PRTMOD DECLARATIONS 'N 'X ;
+
+
+// CALAGE PROPREMENT DIT : on calcule les cales qui redonnent l'observé.
+USEMOD invcompletemod3ch;
+&lklimit;
+SIMULATE;
+SIMSTART 1982q4 from 1980q1 ; DOTIL 2016q4 ;  // date des derniers comptes trim complets disponibles 
+// Toutes les variables recalculées sont sauvées dans le fichier output
+SAVESIM output ;
+
+// On remplace toutes les cales initialisées à 0 par les cales calculées à l'étape précédente
+&execmd " do cad_@(listecale) = save_output_@(listecale)" ";" ; 
+
+// On vérifie que ce remplacement s'est bien déroulé
+&PRTDSET pcer dsets cad output, RANGE 2015q1::2016q4, vari td_pib5_ch td_pib7_ch ; 
+
+
+
+// Vérification du calage
+
+DELSAVE all ; DELACCESS all ; DRANGE ;
+ACCESS coefmod 	type formdata id ./coefnewmodch.frm mode r ; SEARCH coefmod ;
+ACCESS cad 		type formdata id ./don3ch.frm mode r; SEARCH cad ;
+USEMOD mod3ch  ;
+SIMULATE;
+CONOPT concr 0.0000000001;
+SIMSTART 1985q4  from 1980q1 ; 
+DOTIL    2016q4 ;  
+SAVESIM temp;
+
+&PRTDSET pcer dsets cad temp, RANGE 2015q1::2016q4, vari td_pib5_ch td_pib7_ch demmon;
+
+// La base don3ch.frm a été créé
+// Le modèle mod3ch et invmode3ch ont été créés
+// EOF
+

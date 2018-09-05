@@ -1,0 +1,50 @@
+// Ce code source est régi par la licence CeCILL V2.1 soumise au droit français et 
+//respectant les principes de diffusion des logiciels libres. Il est autorisé de modifier 
+//et/ou redistribuer ce code sous les conditions de la licence CeCILL V2.1. Le texte complet
+// de la licence CeCILL V2.1 est dans le fichier `LICENSE`.
+
+// fonction qui prolonge une série x par le taux de croissance sur période de t1 à t2
+// Arguments série à prolonger x
+//          début trend t1
+//          fin de trend t2
+//          dernière période connue pour x d
+//          nombre de périodes à compléter n (nombre de trimestres!!!)
+
+
+addfun main,taux;
+
+procedure main(x,t1,t2,d,n)
+  { z=subrange(x,startdate(x),D);
+    a=convert(substr(convert(d),1,4),"NUM");
+    tr=convert(substr(convert(d),6,6),"NUM");
+    txm=taux(x,t1,t2);
+    for (t=a*4+tr+1;t<=a*4+tr+n;t=t+1) 
+          {print(txm);       
+           i=round((t-1)/4,0,-1);
+           k=t-i*4;  
+          z=c.(z,z[convert(convert(I)||"Q"||convert(K),"DATE")-1]*(1+txm));
+          }
+    return (z);
+    
+   }
+
+ 
+procedure taux (x,t1,t2)
+{    tx=x[T1+1]/x[T1]-1;
+     a1=convert(substr(convert(t1),1,4),"NUM");
+     a2=convert(substr(convert(t2),1,4),"NUM");
+     tr1=convert(substr(convert(t1),6,6),"NUM");
+     tr2=convert(substr(convert(t2),6,6),"NUM");
+
+     for (t=a1*4+tr1+1;t<=a2*4+tr2-1;t=t+1)
+       {
+       i=round((t-1)/4,0,-1);
+       k=t-i*4;
+       tx=c.(tx,x[convert(convert(I)||"Q"||convert(K),"DATE")+1]
+                /x[convert(convert(I)||"Q"||convert(K),"DATE")]-1);
+        }                
+      txm=mean(tx);    
+      return (txm);
+
+}
+

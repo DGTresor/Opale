@@ -1,0 +1,165 @@
+// Ce code source est régi par la licence CeCILL V2.1 soumise au droit français et 
+//respectant les principes de diffusion des logiciels libres. Il est autorisé de modifier 
+//et/ou redistribuer ce code sous les conditions de la licence CeCILL V2.1. Le texte complet
+// de la licence CeCILL V2.1 est dans le fichier `LICENSE`.
+
+// Fonction qui calcule les coefficients d'une équation sur fenêtre glissante de x années
+// arguments: modèle contenant l'équation, la date de début et de fin de la période d'estimation (en trimestriel),
+//	 		 la taille de la fenêtre (en années), le nombre de variables instrumentales, 
+//			 le nom de ces variables instrumentales(si c'est une formule, la mettre entre guillemets)
+//			 et les noms des coefficients tels qu'ils apparaissent dans l'équation (séparés par un espace).
+
+// Il n'est pas nécéssaire de mettre tous les coefficients de l'équation, seulement ceux qu'on veut suivre au cours du temps.
+
+// exemple d'appel pour l'équation d'investissement:
+// &regressionglissante d11lin 1984q1 2007q4 10 2 "del(log(td_p6_bmna7_ch))" "del(log(td_p51m_d7_ch))" cb10 cb12 cgoulot0 cmarge1 mu mutx1;
+
+ADDFUN main;
+PROCEDURE main()
+begin;
+
+// Récupération des arguments de la fonction
+EQUATION_A_UTILISER :
+	GET from term  item  equation "EQUATION A UTILISER";
+        IF (equation == "") THEN
+        begin;
+        	PRINT ("Erreur: Le modèle doit être non vide.");
+		clear() ;
+          	GOTO fin ;
+    	end;
+
+DATE_DEBUT : 	
+	GET from term  item date_de_deb  "DATE DE DEBUT";           
+    	date_deb=CONVERT(date_de_deb,"date");
+
+DATE_FIN : 	
+	GET from term  item date_de_fin  "DATE DE FIN";           
+    	date_fin=CONVERT(date_de_fin,"date");
+    	IF (date_deb>=date_fin) THEN
+        begin;
+        	PRINT ("Erreur: La date de fin doit être postérieure la date de début. (les dates de début de fin ont été inversées)");
+		clear() ;
+          	GOTO fin ;
+    	end;
+
+TAILLE_FENETRE :
+	GET from term  auto  taille_fenetre "TAILLE DE LA FENTRE";
+		IF (taille_fenetre<5) THEN
+        begin;
+        	PRINT ("Erreur: La fenetre glissante doit contenir au moins 5 années.");
+		clear() ;
+          	GOTO fin ;
+    	end;
+    	IF (date_fin-date_deb+1<4*taille_fenetre) THEN
+        begin;
+        	PRINT ("Erreur: La période spécifiée est trop courte pour la fenêtre de régression.");
+		clear() ;
+          	GOTO fin ;
+    	end;
+    	x=taille_fenetre*4;// nombre de trimestres dans la fenêtre glissante
+
+NOMBRE_DE_VARIABLE :
+	GET from term  auto  nombre_var "NOMBRE DE VARIABLES";
+		IF (DATATYPE(nombre_var,TRUE)<>1) THEN
+			begin;
+			PRINT("Erreur: il faut indiquer le nombre de variables.");
+			CLEAR();
+			GOTO fin;
+		end;
+		IF (nombre_var<0) THEN
+			begin;
+			PRINT("Erreur: le nombre de variables doit être positif.");
+			CLEAR();
+			GOTO fin;
+		end;
+
+NOMBRE_VARIABLES_INSTRUMENTALES :
+	GET from term  auto  nombre_vi "NOMBRE DE VARIABLES INSTRUMENTALES";
+		IF (DATATYPE(nombre_vi,TRUE)<>1) THEN
+			begin;
+			PRINT("Erreur: il faut indiquer le nombre de variables instrumentales.");
+			clear();
+			GOTO fin;
+		end;
+		IF (nombre_vi<0) THEN
+			begin;
+			PRINT("Erreur: le nombre de variables instrumentales doit être positif.");
+			clear();
+			GOTO fin;
+		end;
+
+VARIABLES_INSTRUMENTALES :
+IF(nombre_vi>0) THEN
+	begin;
+		liste_vi=C.();
+		liste_nom_vi="";
+		FOR (j=1;j<=nombre_vi;j=j+1)
+			begin;
+			GET from term nom_vi ;
+			liste_vi=C.(liste_vi, nom_vi);
+			liste_nom_vi=liste_nom_vi||" \""||nom_vi||"\"";
+			PRINT(liste_nom_vi);
+			end;
+end;
+
+ 
+ // initialisation des séries qui vont contenir les différentes estimations des coefficients
+ liste_vers_cvs=C.(); // liste des séries à récupérer ensuite
+ FOR(j=1;j<=nombre_var;j=j+1)
+ 	begin;
+ 	nom_liste_coef	="liste_coef_"||j;
+ 	nom_liste_ster	="liste_ster_"||j;
+ 	liste_vers_cvs	=C.(liste_vers_cvs,nom_liste_coef,nom_liste_ster);
+ 	>>DOSAVE &nom_liste_coef= SUBRANGE (temps78,&date_deb-1,&date_deb-1) ; //chaque liste est initialisée à la date précédent date_deb, et contient un chiffre qui n'a pas de signification
+ 	>>DOSAVE &nom_liste_ster= SUBRANGE (temps78,&date_deb-1,&date_deb-1) ;
+ 	end;
+ >>DOSAVE liste_date_debut 	= RESHAPE(&date_deb-1,&date_deb-1);
+ >>DOSAVE liste_date_fin 	= RESHAPE(&date_fin-1,&date_deb-1) ;
+ >>DOSAVE liste_rsq     	= SUBRANGE (temps78,&date_deb-1,&date_deb-1) ;
+ liste_vers_cvs=C.(liste_vers_cvs,"liste_date_debut","liste_date_fin","liste_rsq");
+ 
+ // estimation de l'équation sur fenêtre glissante
+ >>DOSAVE p51s_d7_cale = 0 * td_pib7_ch ; 
+ >>ACCESS coefinv type formdata id ./coeffs.frm mode c; SEARCH coefinv w ;
+ FOR (i=date_deb;i<=date_fin+1-x;i=i+1) 
+ 		begin;
+ 		j=i+x-1;
+ 		// On estime l'équation sur la période i jusqu'à j (cette période a la taille de la fenêtre demandée)
+ 		>>USEMOD &equation ;BOUNDS &i TO &j;
+ 		IF (nombre_vi>0) THEN
+ 		begin;
+ 			>>CHANGESYM endogenous td_b1_bmna7_ch;
+ 			//>>CRPREG "del(log(td_p6_bmna7_ch))" "del(log(td_p51m_d7_ch))" "del(log(td_p51g_d7_ch))" CONSTANT; 
+ 			>>CRPREG &liste_nom_vi CONSTANT; 
+ 			>>TSLSMOD 1 ;
+ 		end;
+ 		ELSE
+ 		begin;
+ 			>>OLSMOD 1 ;
+ 		end;
+ 		>>FILECOEF coefinv;
+ 		>>SAVERECALL statreg  rsq COEF STER;
+ 		>>SEARCH save_statreg;
+ 		 		
+ 		// remplissage des séries de coefficients
+ 		>>DOSAVE liste_date_debut	= (C.(liste_date_debut,&i));
+ 		>>DOSAVE liste_date_fin		= (C.(liste_date_fin,&j));
+ 		>>DOSAVE liste_rsq			= (C.(liste_rsq,statreg_RSQ));
+ 		FOR(k=1;k<=nombre_var;k=k+1)
+ 			begin;
+ 			nom_liste_coef	= "liste_coef_"||k;
+ 			nom_liste_ster	= "liste_ster_"||k;
+ 			>>DOSAVE &nom_liste_coef	= (C.(&nom_liste_coef,coef[&k]));
+ 			>>DOSAVE &nom_liste_ster	= (C.(&nom_liste_ster,statreg_STER[&k]));
+ 			end; 
+ 		end;
+ 
+ // affichage nom des séries à récupérer 
+ PRINT("Séries à votre disposition:");
+ PRINT(liste_vers_cvs);
+ FIN :
+ >>;
+ 
+ end;		
+ 
+   

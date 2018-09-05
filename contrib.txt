@@ -1,0 +1,49 @@
+// Ce code source est régi par la licence CeCILL V2.1 soumise au droit français et 
+//respectant les principes de diffusion des logiciels libres. Il est autorisé de modifier 
+//et/ou redistribuer ce code sous les conditions de la licence CeCILL V2.1. Le texte complet
+// de la licence CeCILL V2.1 est dans le fichier `LICENSE`.
+
+// *************************************************************************
+// Calcul des contributions pour les principales équations de comportement
+// Sauvegarde au format CSV : 	
+// *************************************************************************
+
+// NB : il est possible de tester des équations alternatives
+// en ajoutant un fichier dans /contrib
+
+// Consommation des ménages
+ACCESS contrib id ./contrib;
+SEARCH contrib;
+INPUT p3md7ch;
+DELACCESS all;
+DELSEARCH all;
+DRANGE;
+
+//
+ACCESS contrib id ./contrib;
+SEARCH contrib;
+INPUT p51sdhfz7ch ; 
+DELACCESS all;
+DELSEARCH all;
+DRANGE;
+
+ACCESS contrib id ./contrib;
+SEARCH contrib;
+INPUT p6dim7ch;
+DELACCESS all;
+DELSEARCH all;
+DRANGE;
+
+ACCESS contrib id ./contrib;
+SEARCH contrib;
+INPUT p7dim7ch ;
+DELACCESS all;
+DELSEARCH all;
+DRANGE;
+
+ACCESS contrib id ./contrib;
+SEARCH contrib;
+INPUT emploi; 
+DELACCESS all;
+DELSEARCH all;
+DRANGE;

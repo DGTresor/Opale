@@ -1,0 +1,108 @@
+// Ce code source est régi par la licence CeCILL V2.1 soumise au droit français et 
+//respectant les principes de diffusion des logiciels libres. Il est autorisé de modifier 
+//et/ou redistribuer ce code sous les conditions de la licence CeCILL V2.1. Le texte complet
+// de la licence CeCILL V2.1 est dans le fichier `LICENSE`.
+
+// *********************************************************************************************************
+// macro servant à calculer la cale d'une équation
+// exemple d'appel : &calculcale 1993q1 2000q4 equation cale endogene ;
+// donne la cale dans le répertoire save
+// utilise "temppourcalculcale" comme mémoire tampon et écrase ce qu'il y a dedans
+// utilise le modèle invpourcale
+// *********************************************************************************************************
+
+
+addfun main ;
+procedure main()
+begin;
+
+
+AN_DEBUT : 	
+	get from term  item andeb  "ANNEE DE DEBUT";           
+        if (date2year(convert(andeb,"date")) < 1960 or date2year(convert(andeb,"date")) > 2004) then
+        begin;
+          	print ("ANNEE erronée !");
+		clear() ;
+          	goto fin ;
+        end;
+
+	perdeb=convert(andeb,"date");
+
+
+AN_FIN : 	
+	get from term  item anfin  "ANNEE DE FIN";           
+        IF (DATE2YEAR(CONVERT(anfin,"date")) < 1960 OR DATE2YEAR(CONVERT(anfin,"date")) > 2030) THEN
+        begin;
+          	print ("ANNEE erronée !");
+		clear() ;
+          	goto fin ;
+        end;
+
+	perfin=convert(anfin,"date");
+
+
+
+equation_A_UTILISER :
+
+	get from term  item  equation "equation A UTILISER";
+        if (equation == "") then
+        begin;
+        	print ("Le modèle doit être non vide");
+		clear() ;
+          	goto fin ;
+        end;
+
+
+NOM_CALE :
+	get from term  item  nomcale "NOM DE LA CALE";
+        if ( nomcale == "") then
+        begin;
+		nomcale = "cale" ;
+        end;
+
+NOM_ENDO :
+	get from term  item  nomendo "NOM ENDOGENE";
+        if ( nomendo == "") then
+        begin;
+		nomendo = "endo" ;
+        end;
+
+
+QUESTIONGRAPHIQUE :
+	get from terminal item boolcontrib "Voulez vous les contributions annuelles   O ou N en majuscule ou minuscule";
+	boolcontrib = upper(boolcontrib) ;
+        if (boolcontrib <> "O"  and boolcontrib <> "N") then
+        begin;
+		boolcontrib = "N" ;
+        end;
+
+
+
+>>delaccess temppourcalculcale;
+>>access temppourcalculcale type memdb id ./temppourcalculcale.frm mode c;
+>>do hfdelete("temppourcalculcale");
+>>do temppourcalculcale_&nomcale = 0*&nomendo  ;
+>>do &nomcale = 0*&nomendo  ;
+
+>>usemod &equation ;
+>>changesym endogenous &nomcale , exogenous &nomendo ;
+>>savemod invpourcale ; usemod invpourcale ; simulate ;
+>>simstart &perdeb ; dotil &perfin ;
+>>filesim temppourcalculcale ;
+>>DOSAVE &nomcale = temppourcalculcale_&nomcale ; DELACCESS temppourcalculcale ;
+
+IF ( boolcontrib == "O" ) THEN
+begin ;
+	>>DOSAVE x0=1+DEL(&nomcale) ;
+	>>DOSAVE y0=1/x0 ;
+	>>DOSAVE z0=x0*(1+x0(+1)*(1+x0(+2)*(1+x0(+3))))/(1+y0(-1)*(1+y0(-2)*(1+y0(-3)))) ;	
+	>>DOSAVE contributioncale = 100*(COMPACT(z0,1,1)-1) ;	
+	>>DO PRT.( "Contribution annuelle de la cale en pourcent") ;	
+	>>DO PRT.( contributioncale ) ;
+end ;
+>>drange ;
+
+FIN :
+>>;
+
+end;

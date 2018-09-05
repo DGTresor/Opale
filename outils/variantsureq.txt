@@ -1,0 +1,184 @@
+// Ce code source est régi par la licence CeCILL V2.1 soumise au droit français et 
+//respectant les principes de diffusion des logiciels libres. Il est autorisé de modifier 
+//et/ou redistribuer ce code sous les conditions de la licence CeCILL V2.1. Le texte complet
+// de la licence CeCILL V2.1 est dans le fichier `LICENSE`.
+
+// **************************************************************************************************************************
+// macro servant à faire une variante sur une variable - ici variableabouger - à cale contante d une equation
+// exemple d'appel : &variantsureq 1987q1 2004q4 1990q1 equation endogene variableabouger 3 O O O ;
+// le 3 correspond à 3% de variation sur la variableabouger ; cependant si c est en niveau c simplement le montant
+// a additioner a la variable    par exemple il est preferable de mettre le taux de chomage en niveau plus qu en pourcent
+// le premier O ou N signifie Oui ou Non pour simuler une impulsion - juste 3% un trimestre donné et 0 les autres
+// ou un créneau - 1 à partir de la date donnée
+// le deuxième O ou N signifie Oui ou Non pour savoir si l'on prend en niveau ou en pourcent de variantion
+// par défaut : non c a dire que c est en pourcent
+// le troisième O ou N signifie Oui ou Non pour avoir l'écart relatif à la fin entre les deux séries simulées observées
+// par défaut : oui
+// **************************************************************************************************************************
+
+
+addfun main ;
+procedure main()
+begin;
+
+
+AN_DEBUT : 	
+	get from term  item andeb  "ANNEE DE DEBUT";           
+        if (date2year(convert(andeb,"date")) < 1960 or date2year(convert(andeb,"date")) > 2020) then
+        begin;
+          	print ("ANNEE de début erronée !");
+		clear() ;
+          	goto fin ;
+        end;
+
+	perdeb=convert(andeb,"date");
+
+
+AN_FIN : 	
+	get from term  item anfin  "ANNEE DE FIN";           
+        if (date2year(convert(anfin,"date")) < 1960 or date2year(convert(anfin,"date")) > 2020) then
+        begin;
+          	print ("ANNEE de fin erronée !");
+		clear() ;
+          	goto fin ;
+        end;
+
+	perfin=convert(anfin,"date");
+
+
+AN_IMPULSION : 	
+	get from term  item animpuls  "ANNEE DE FIN";           
+        if (date2year(convert(animpuls,"date")) < 1960 or date2year(convert(animpuls,"date")) > 2020) then
+        begin;
+          	print ("ANNEE de début d impulsion erronée !");
+		clear() ;
+          	goto fin ;
+        end;
+
+	perimpuls = convert(animpuls,"date");
+
+
+EQUATION_A_UTILISER :
+	get from term  item  equation "EQUATION A UTILISER";
+        if (equation == "") then
+        begin;
+        	print ("Le modèle doit être non vide");
+		clear() ;
+          	goto fin ;
+        end;
+
+NOM_ENDO :
+	get from term  item  nomendo "NOM ENDOGENE";
+        if ( nomendo == "" ) then
+        begin;
+		nomendo = "endo" ;
+        end;
+
+NOM_VARIABLE_A_BOUGER :
+	get from term  item  nomvariini "NOM DE LA VARIABLE A BOUGER" ;
+        if ( nomvariini == "") then
+        begin;
+          	print ("VARIABLE A BOUGER erronée !");
+		clear() ;
+          	goto fin ;
+        end;
+
+MONTANT_A_BOUGER_SUR_CETTE_VARIABLE :
+	get from term  number  ecartpourcent "Ecart à mettre en %";
+        if ( ecartpourcent > 1000 or ecartpourcent == 0 or ecartpourcent < -1000 ) then
+        begin;
+		ecartpourcent = 1 ;
+        end;
+
+QUESTIONIMPULSOUNON :
+	get from terminal item boolimpulsounon "Voulez vous avoir l ecart relatif   O ou N en majuscule ou minuscule ";
+	boolimpulsounon = upper(boolimpulsounon) ;
+        if (boolimpulsounon <> "O"  and boolimpulsounon <> "N") then
+        begin;
+		boolimpulsounon = "N" ;
+        end;
+
+QUESTION_POURCENT_OU_NIVEAU :
+	get from terminal item boolpourcent "Voulez vous un graphique   O ou N en majuscule ou minuscule ";
+	boolpourcent = upper(boolpourcent) ;
+        if ( boolpourcent <> "O"  and boolpourcent <> "N") then
+        begin;
+		boolpourcent = "O" ;
+        end;
+
+QUESTIONGRAPHIQUE :
+	get from terminal item boolgraphique "Voulez vous un graphique   O ou N en majuscule ou minuscule ";
+	boolgraphique = upper(boolgraphique) ;
+        if (boolgraphique <> "O"  and boolgraphique <> "N") then
+        begin;
+		boolgraphique = "O" ;
+        end;
+
+
+>>dosave obs = &nomendo ;
+>>dosave gobs = 100*obs/obs(-1)-100 ;
+>>dosave anobs = compact(&nomendo,-1) ;
+>>dosave ganobs = 100*anobs/anobs(-1)-100 ;
+
+//>>dosave nomcale = 0*&nomendo  ;
+
+>>delaccess temp;
+>>access temp type formdata id ./temppourminivariante.frm mode c; search first temp ;
+>>do hfdelete("temp");
+>>do temp_temps60 = reshape(seq(80*date2per(startdate(obs))),startdate(obs)-20);
+
+if ( boolpourcent == "O" ) then
+begin;
+	if (boolimpulsounon == "O") then
+	begin;
+		>>dosave dirac = ( if temp_temps60 <> values (temp_temps60,&perimpuls) then 0 else 1 ) ;
+		>>do temp_&nomvariini = &nomvariini * (1 + (&ecartpourcent/100) * dirac  );
+	end;
+
+	if (boolimpulsounon == "N") then
+	begin;
+		>>dosave creneau =  (if temp_temps60 >= values (temp_temps60,&perimpuls) then 1 else 0) ;
+		>>do temp_&nomvariini = &nomvariini * (1 + (&ecartpourcent/100) * creneau  );
+	end;
+end ;
+
+if ( boolpourcent == "N" ) then
+begin;
+	if (boolimpulsounon == "O") then
+	begin;
+		>>dosave dirac = ( if temp_temps60 <> values (temp_temps60,&perimpuls) then 0 else 1 ) ;
+		>>do temp_&nomvariini = &nomvariini  + (&ecartpourcent) * dirac  ;
+	end;
+
+	if (boolimpulsounon == "N") then
+	begin;
+		>>dosave creneau =  (if temp_temps60 >= values (temp_temps60,&perimpuls) then 1 else 0) ;
+		>>do temp_&nomvariini = &nomvariini + (&ecartpourcent) * creneau  ;
+	end;
+end ;
+
+>>usemod &equation ;
+>>simulate ;
+>>conopt concr 0.000000001;
+>>simstart &perdeb ; dotil &perfin ;
+>>savesim outputsimvariante ;
+
+>>dosave varie = outputsimvariante_&nomendo ;
+>>dosave gvarie = 100*varie/varie(-1)-100 ;
+>>dosave anvarie = compact(&nomendo,-1) ;
+>>dosave ganvarie = 100*anvarie/anvarie(-1)-100 ;
+
+>>dosave ecartrelatif = 100*varie/obs-100 ;
+
+if (boolgraphique == "O") then
+begin;
+	&plot ; >>vari ecartrelatif ;
+end;
+
+>>do prt.( c.("Séries à votre disposition :","obs","gobs","anobs","ganobs","varie","gvarie","anvarie","ganvarie","ecartrelatif") ) ;
+>>delaccess temp;
+
+FIN :
+>>;
+
+end;

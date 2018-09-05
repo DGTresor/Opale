@@ -1,0 +1,58 @@
+// Ce code source est régi par la licence CeCILL V2.1 soumise au droit français et 
+//respectant les principes de diffusion des logiciels libres. Il est autorisé de modifier 
+//et/ou redistribuer ce code sous les conditions de la licence CeCILL V2.1. Le texte complet
+// de la licence CeCILL V2.1 est dans le fichier `LICENSE`.
+
+// fonction qui reconstitue le stock de capital
+// en entree : stock de capital et investissement en annuel	
+//             investissement trimestriel
+// calcul d'un taux de déclassement apparent
+
+
+addfun main;
+
+procedure main(capital,inv,invtrim)
+{
+	
+	tdecapp=1-(capital-inv)/capital(-1);
+        tdectrim= spatq(tdecapp,0);
+
+   	
+	t1=startdate(capital);
+	t2=enddate(capital);
+
+   z=reshape(capital[t1], convert(convert(date2year(startdate(capital)),"string")||"q4","date"));
+
+    
+    for (j=t1+1;j<=t2;j=j+1)
+   
+	{
+        d=convert(convert(date2year(j),"string")||"q1","date"); 
+     
+	for (i=d;i<=d+3;i=i+1)
+       		{
+       
+
+       prolong=(1-tdectrim[i])*z[i-1]+invtrim[i];
+       z=c.(z,prolong); 
+	       
+      		 }
+      
+	 x=enddate(z);
+
+	 surplus = capital[j]-z[x];
+      
+      
+        z3=z[x-3]+1/4*surplus;
+        z2=z[x-2]+2/4*surplus;
+	z1=z[x-1]+3/4*surplus;
+	z0=capital[j];
+        	
+	z=c.(subrange(z,startdate(z),enddate(z)-4),z3,z2,z1,z0);
+        }
+
+	
+	
+  return(z); 
+
+  }

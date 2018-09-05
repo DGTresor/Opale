@@ -1,0 +1,20 @@
+// Ce code source est régi par la licence CeCILL V2.1 soumise au droit français et 
+//respectant les principes de diffusion des logiciels libres. Il est autorisé de modifier 
+//et/ou redistribuer ce code sous les conditions de la licence CeCILL V2.1. Le texte complet
+// de la licence CeCILL V2.1 est dans le fichier `LICENSE`.
+
+// fonction qui calcule le taux de croissance annuel d'une variable
+//à partir des taux de croissance trimestriels
+// entrer la série en taux de croissance
+
+addfun main;
+procedure main(x)
+
+{
+ x0=EXP(x);
+ y0=1/x0;
+z0=x0*(1+x0(+1)*(1+x0(+2)*(1+x0(+3))))/(1+y0(-1)*(1+y0(-2)*(1+y0(-3))));
+tann=COMPACT(z0,1,1)-1;
+
+return(tann);
+}

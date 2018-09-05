@@ -1,0 +1,40 @@
+// Ce code source est régi par la licence CeCILL V2.1 soumise au droit français et 
+//respectant les principes de diffusion des logiciels libres. Il est autorisé de modifier 
+//et/ou redistribuer ce code sous les conditions de la licence CeCILL V2.1. Le texte complet
+// de la licence CeCILL V2.1 est dans le fichier `LICENSE`.
+
+// fonction qui renvoie la valeur annuelle de l'année précédente
+// en entree : la variable trimestrielle
+
+
+addfun main;
+
+procedure main(variable)
+{
+
+     vint = reshape(c.(1 , 2 , 3 , 4 , 1 , 2 , 3 , 4 ,1 , 2 , 3 , 4 ,
+                         1 , 2 , 3 , 4 , 1 , 2 , 3 , 4 ,1 , 2 , 3 , 4 , 
+                         1 , 2 , 3 , 4 , 1 , 2 , 3 , 4 ,1 , 2 , 3 , 4 ,
+                         1 , 2 , 3 , 4 , 1 , 2 , 3 , 4 ,1 , 2 , 3 , 4 ,
+                         1 , 2 , 3 , 4 , 1 , 2 , 3 , 4 ,1 , 2 , 3 , 4 , 
+                         1 , 2 , 3 , 4 , 1 , 2 , 3 , 4 ,1 , 2 , 3 , 4 , 
+                         1 , 2 , 3 , 4 , 1 , 2 , 3 , 4 ,1 , 2 , 3 , 4 ,                       
+                         1 , 2 , 3 , 4 , 1 , 2 , 3 , 4 ,1 , 2 , 3 , 4 ,
+                         1 , 2 , 3 , 4 , 1 , 2 , 3 , 4 ,1 , 2 , 3 , 4 ,
+                         1 , 2 , 3 , 4 , 1 , 2 , 3 , 4 ,1 , 2 , 3 , 4 ,
+                         1 , 2 , 3 , 4 , 1 , 2 , 3 , 4 ,1 , 2 , 3 , 4 ,
+                         1 , 2 , 3 , 4 , 1 , 2 , 3 , 4 ,1 , 2 , 3 , 4 ,
+                         1 , 2 , 3 , 4 , 1 , 2 , 3 , 4 ,1 , 2 , 3 , 4 ,
+                         1 , 2 , 3 , 4 , 1 , 2 , 3 , 4 ,1 , 2 , 3 , 4 ,
+                         1 , 2 , 3 , 4 , 1 , 2 , 3 , 4 ,1 , 2 , 3 , 4 ,
+                         1 , 2 , 3 , 4 , 1 , 2 , 3 , 4 ,1 , 2 , 3 , 4 ,
+                         1 , 2 , 3 , 4 , 1 , 2 , 3 , 4 ,1 , 2 , 3 , 4 ,
+                         1 , 2 , 3 , 4 , 1 , 2 , 3 , 4 ,1 , 2 , 3 , 4),1978Q1);
+
+   	z=(if vint<2 then (variable(-1)+variable(-2)+variable(-3)+variable(-4))
+             else if vint<3 then (variable(-2)+variable(-3)+variable(-4)+variable(-5))
+	     else if vint<4 then (variable(-3)+variable(-4)+variable(-5)+variable(-6))
+	     else (variable(-4)+variable(-5)+variable(-6)+variable(-7)));
+
+  return(z); 
+  }

@@ -1,0 +1,34 @@
+// Ce code source est régi par la licence CeCILL V2.1 soumise au droit français et 
+//respectant les principes de diffusion des logiciels libres. Il est autorisé de modifier 
+//et/ou redistribuer ce code sous les conditions de la licence CeCILL V2.1. Le texte complet
+// de la licence CeCILL V2.1 est dans le fichier `LICENSE`.
+
+// fonction qui prend en entrée des séries (qui doivent alterner volumes chaines et valeurs), et qui rend la sommen en volume chaine
+
+addfun main;
+
+//PROCEDURE main(listvolch,listval)  
+PROCEDURE main(arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12,arg13,arg14,arg15,arg16,arg17,arg18,arg19,arg20,arg21,arg22,arg23,arg24,arg25,arg26,arg27,arg28,arg29,arg30,arg31,arg32,arg33,arg34,arg35,arg36,arg37,arg38,arg39,arg40)
+{
+	nb=numargs(); // les arguments impairs sont les volumes chaines, les arguments pairs sont les valeurs
+	test=nb/2; 
+	test2=ROUND(test);
+	IF (test<>test2) THEN
+		{
+			PRT.("Error: Number of arguments is not even");
+			RETURN(NA);  
+		}
+		
+	output7=0*getarg(1);
+	output3=0*getarg(2);
+	FOR(j=1;j<nb+1;j=j+2)
+	{
+		valeur = getarg(j)/getarg(j)(-1)*getarg(j+1)(-1);
+		output7 = output7 + valeur;
+		output3 = output3 + getarg(j+1);		 
+	}
+	output0 = pxbasevolvoann'f(output7,output3);
+	output7_ch = output3 / output0;
+	
+	RETURN(output7_ch);
+	}

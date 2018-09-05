@@ -1,0 +1,114 @@
+// Ce code source est régi par la licence CeCILL V2.1 soumise au droit français et 
+//respectant les principes de diffusion des logiciels libres. Il est autorisé de modifier 
+//et/ou redistribuer ce code sous les conditions de la licence CeCILL V2.1. Le texte complet
+// de la licence CeCILL V2.1 est dans le fichier `LICENSE`.
+
+// ********************************************
+// *****  Importations manuf. P7dim7CH    *****
+// ********************************************
+
+DELACCESS all; DELSAVE all; DRANGE;
+ACCESS outils id ./outils;							SEARCH outils;
+ACCESS cad type formdata id ./don3ch.frm mode r ; SEARCH cad ;
+
+USEMOD ;
+ADDSYM endogenous td_p7_dim7_ch, exogenous p7_dim7_ch_cale, 'c ;
+ADDEQ bottom, 
+td_p7_dim7_ch : DEL(LOG(td_p7_dim7_ch)) = p7dim7cst'c
+        	+ p7dim7ar1'c	*	(DEL(LOG(td_p7_dim7_ch))(-1) - DEL(p7_dim7_ch_cale)(-1))
+        	+ p7dim7p3'c	*	DEL(LOG(TD_P3M_D7_CH))
+        	+ p7dim7p5'c*	DEL(LOG(TD_P5_D7_CH))
+        	+ p7dim7p6'c	*	DEL(LOG(TD_P6_D7_CH))
+        	+ p7dim7mu'c	*	(
+							LOG(td_p7_dim7_ch(-1))- p7_dim7_ch_cale(-1)
+							-LOG(TD_RNT_D7_CH(-1))
+								-  (-0.962704
+									- 0.302614 * LOG(COMPIT(-1))
+									+ 0.734846 * LOG(ouv_OCDE(-1))
+									)
+								)			
+        	+ DEL(p7_dim7_ch_cale) ;
+FILEMOD estimeq ;
+DOSAVE p7_dim7_ch_cale = 0 * td_p7_d7_ch ;
+USEMOD estimeq; BOUNDS 1993q1 TO 2012q4 ; OLSMOD td_p7_dim7_ch ; 
+
+
+SAVECOEF coefinv; SEARCH save_coefinv;
+
+
+&simcalenulle 1982q1 2016q4 estimeq p7_dim7_ch_cale td_p7_dim7_ch o o ;
+&calculcale   1982q1 2016q4 estimeq p7_dim7_ch_cale td_p7_dim7_ch o ;
+
+
+
+// *************************** CALCUL DES CONTRIBUTIONS ***************************//
+
+DRANGE;  
+
+// *** en trimestriel ***
+
+DOSAVE	mainf_p7dim7_rnt		= mainf'f(C.(1 + p7dim7mu+p7dim7ar1,-p7dim7ar1),	C.(0,-p7dim7mu)),
+		mainf_p7dim7_p3m		= mainf'f(C.(1 + p7dim7mu+p7dim7ar1,-p7dim7ar1),	C.(p7dim7p3,-p7dim7p3)),
+		mainf_p7dim7_p5			= mainf'f(C.(1 + p7dim7mu+p7dim7ar1,-p7dim7ar1),	C.(p7dim7p5,-p7dim7p5)),
+		mainf_p7dim7_p6			= mainf'f(C.(1 + p7dim7mu+p7dim7ar1,-p7dim7ar1),	C.(p7dim7p6,-p7dim7p6)),
+		mainf_p7dim7_compit		= mainf'f(C.(1 + p7dim7mu+p7dim7ar1,-p7dim7ar1),	C.(0,+p7dim7mu*0.302614)),
+		mainf_p7dim7_ouvocde	= mainf'f(C.(1 + p7dim7mu+p7dim7ar1,-p7dim7ar1),	C.(0,-p7dim7mu*0.734846)),
+		; 
+
+DOSAVE	contrib_p7dim7_rnt		= contrib'f(DEL(LOG(TD_RNT_D7_CH)),	mainf_p7dim7_rnt),
+		contrib_p7dim7_p3m		= contrib'f(DEL(LOG(TD_P3M_D7_CH)),	mainf_p7dim7_p3m),
+		contrib_p7dim7_p5		= contrib'f(DEL(LOG(TD_P5_d7_CH)),	mainf_p7dim7_p5),
+		contrib_p7dim7_p6		= contrib'f(DEL(LOG(TD_P6_D7_CH)),	mainf_p7dim7_p6),
+		contrib_p7dim7_compit	= contrib'f(DEL(LOG(compit)),		mainf_p7dim7_compit),
+		contrib_p7dim7_ouvocde	= contrib'f(DEL(LOG(ouv_OCDE)),		mainf_p7dim7_ouvocde),
+		contrib_p7dim7_cale 	= DEL(p7_dim7_ch_cale),
+		dlog_simul				= DEL(LOG(simul)),
+		dlog_obs				= DEL(LOG(obs));
+
+
+/* Vérifications */
+DOSAVE  contrib_verif_simul 	= dlog_simul - contrib_p7dim7_rnt - contrib_p7dim7_p3m - contrib_p7dim7_p5 - contrib_p7dim7_p6 - contrib_p7dim7_compit - contrib_p7dim7_ouvocde,
+ 		contrib_verif_obs		= dlog_obs - dlog_simul - contrib_p7dim7_cale;
+DO	PRT.(contrib_verif_simul),
+	PRT.(contrib_verif_obs);
+
+
+
+// *** en annuel ***
+DOSAVE	contrib_p7dim7_rnt_ann		= 100*calcul'f(contrib_p7dim7_rnt),
+		contrib_p7dim7_p3m_ann		= 100*calcul'f(contrib_p7dim7_p3m),
+		contrib_p7dim7_p5_ann		= 100*calcul'f(contrib_p7dim7_p5),
+		contrib_p7dim7_p6_ann		= 100*calcul'f(contrib_p7dim7_p6),
+		contrib_p7dim7_compit_ann	= 100*calcul'f(contrib_p7dim7_compit),
+		contrib_p7dim7_ouvocde_ann	= 100*calcul'f(contrib_p7dim7_ouvocde),
+		contrib_p7dim7_cale_ann		= 100*calcul'f(contrib_p7dim7_cale),
+      	dlog_simul_ann 				= 100*calcul'f(dlog_simul),          
+     	dlog_obs_ann 				= 100*calcul'f(dlog_obs);
+
+/* Vérifications */
+DOSAVE contrib_verif_simul_ann	= dlog_simul_ann - contrib_p7dim7_rnt_ann - contrib_p7dim7_p3m_ann - contrib_p7dim7_p5_ann - contrib_p7dim7_p6_ann - contrib_p7dim7_compit_ann - contrib_p7dim7_ouvocde_ann ,
+       contrib_verif_obs_ann	= dlog_obs_ann - dlog_simul_ann - contrib_p7dim7_cale_ann;  
+DO	PRT.(contrib_verif_simul_ann),
+	PRT.(contrib_verif_obs_ann);
+
+
+
+//********************************************************************************************************   
+// Sorties : contributions annuelles et trimestrielles, séries simulées et observées
+//********************************************************************************************************   
+
+
+DRANGE 1992a TO 2016a;
+&ts2tbl file "contrib/p7dim7ctribann.csv"	vari dlog_obs_ann dlog_simul_ann contrib_p7dim7_rnt_ann contrib_p7dim7_p3m_ann contrib_p7dim7_p5_ann contrib_p7dim7_p6_ann
+															contrib_p7dim7_compit_ann contrib_p7dim7_ouvocde_ann contrib_p7dim7_cale_ann;
+
+DO 	ouv_OCDE_base100_1995Q1	= 100*(ouv_OCDE)/VALUES(ouv_OCDE,1995q1),
+	taux_pen_imports_rnt	= 100*(td_p7_dim7_ch/td_rnt_d7_ch)/VALUES(td_p7_dim7_ch/td_rnt_d7_ch,1995q1),
+	taux_pen_imports_dhs	= 100*(td_p7_dim7_ch/td_dhs_d7_ch)/VALUES(td_p7_dim7_ch/td_dhs_d7_ch,1995q1);
+
+
+
+DRANGE 1992q1 TO 2016q4;
+&ts2tbl file "contrib/p7dim7ctribtrim.csv"	vari dlog_obs dlog_simul contrib_p7dim7_rnt contrib_p7dim7_p3m contrib_p7dim7_p5 contrib_p7dim7_p6 contrib_p7dim7_compit contrib_p7dim7_ouvocde contrib_p7dim7_cale;
+
+DRANGE ;

@@ -1,0 +1,78 @@
+// Ce code source est régi par la licence CeCILL V2.1 soumise au droit français et 
+//respectant les principes de diffusion des logiciels libres. Il est autorisé de modifier 
+//et/ou redistribuer ce code sous les conditions de la licence CeCILL V2.1. Le texte complet
+// de la licence CeCILL V2.1 est dans le fichier `LICENSE`.
+
+// fonction qui reconstitue le stock de capital
+// en entree : stock de capital et investissement en annuel	
+//             investissement trimestriel
+// calcul d'un taux de déclassement apparent
+
+
+//type : type de données attendues "7_ch" ou "7"
+addfun main;
+
+PROCEDURE main(knet3,knet7,knet7_ch,fbcf7,p51s_d7,invtrim7,type)
+{
+	
+	/*calcul d'un taux de déclassement annuel : Kvolvo[a]=Kval[a-1]*(1-delta)+Ivolvo[a]*/
+	tdecapp=1-(knet7-fbcf7)/knet3(-1);
+	//trimestrialisation du taux de déclassement
+    tdectrim= SPATQ(tdecapp,0);
+
+	//facteur d'ajustement BMNA vs ENF
+	ajust=fbcf7/p51s_d7;
+
+   	//Initialisation des séries
+	t1=STARTDATE(knet7);
+	t1bis=STARTDATE(knet7_ch);
+	t2=ENDDATE(knet7);
+    td_k1_d7=RESHAPE(knet7[t1], CONVERT(CONVERT(DATE2YEAR(STARTDATE(knet7)),"string")||"q4","date"));
+    td_k1_d7_ch=RESHAPE(knet7_ch[t1bis], CONVERT(CONVERT(DATE2YEAR(STARTDATE(knet7_ch)),"string")||"q4","date"));    
+    
+    //Calcul itératif par accumulation
+    for (j=t1+1;j<=t2;j=j+1)
+   
+	{
+        d=CONVERT(CONVERT(DATE2YEAR(j),"string")||"q1","date"); //Premier trimestre de l'année
+     
+	FOR (i=d;i<=d+3;i=i+1)
+       		{
+       IF (i==d) THEN 
+       {
+ 	      prolong=(1-tdectrim[i])*knet3[j-1]+invtrim7[i]*ajust[j];//Accumulation en volvo au 1er trimestre => Utiliser le capital en valeur en fin d'année précédente (déjà dans le système de prix souhaité)
+    	   td_k1_d7=C.(td_k1_d7,prolong);
+       }
+       ELSE
+        {
+ 	      prolong=(1-tdectrim[i])*td_k1_d7[i-1]+invtrim7[i]*ajust[j];//Accumulation standard en volvo aux autres trimestres
+    	   td_k1_d7=C.(td_k1_d7,prolong);
+       }      
+      		 }
+      
+	 x=ENDDATE(td_k1_d7);
+
+	//Répartition de l'écart volvo annuel volvo trimestriel éventuel, lié au lissage du taux de déclassement
+	surplus = knet7[j]-td_k1_d7[x];  
+    z3=td_k1_d7[x-3]+1/4*surplus;
+    z2=td_k1_d7[x-2]+2/4*surplus;
+	z1=td_k1_d7[x-1]+3/4*surplus;
+	z0=knet7[j];
+    
+    //Intégration de cette correction dans la série + chaînage    	
+	td_k1_d7=C.(SUBRANGE(td_k1_d7,STARTDATE(td_k1_d7),ENDDATE(td_k1_d7)-4),z3,z2,z1,z0);
+	td_k1_d7_ch=C.(SUBRANGE(td_k1_d7_ch,STARTDATE(td_k1_d7_ch),ENDDATE(td_k1_d7_ch)),z3*knet7_ch[j-1]/knet3[j-1],z2*knet7_ch[j-1]/knet3[j-1],z1*knet7_ch[j-1]/knet3[j-1],z0*knet7_ch[j-1]/knet3[j-1]);
+        }
+
+  putdata(	tdecapp, "tdecapp");
+  putdata(	tdectrim, "tdectrim");
+  IF (type=="7_ch") THEN
+  	{
+  	RETURN(td_k1_d7_ch);
+  	}
+  ELSE IF (type=="7") THEN
+  	{
+  	RETURN(td_k1_d7);
+  	}
+
+  }

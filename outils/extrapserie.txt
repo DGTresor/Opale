@@ -1,0 +1,26 @@
+// Ce code source est régi par la licence CeCILL V2.1 soumise au droit français et 
+//respectant les principes de diffusion des logiciels libres. Il est autorisé de modifier 
+//et/ou redistribuer ce code sous les conditions de la licence CeCILL V2.1. Le texte complet
+// de la licence CeCILL V2.1 est dans le fichier `LICENSE`.
+
+// fonction qui extrapole une série x par le taux de croissance de y entre une date 1 
+// et une date 2
+// en entrée : serie x, serie y 
+//             date1 (i.e. une période avant la première nouvelle valeur) date2
+
+addfun main;
+
+procedure main(x,y,date1,date2)
+  {
+ t1=date1;
+ t2=date2;
+ serie=subrange (x,startdate(x), t1);
+  for (i=t1;i<=t2-1;i=i+1)
+     {
+     valeur=serie[i]*y[i+1]/y[i];
+     serie=( c.(serie,valeur) );
+     
+     }
+  return(serie);
+  } 
+     

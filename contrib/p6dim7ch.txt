@@ -1,0 +1,91 @@
+// Ce code source est régi par la licence CeCILL V2.1 soumise au droit français et 
+//respectant les principes de diffusion des logiciels libres. Il est autorisé de modifier 
+//et/ou redistribuer ce code sous les conditions de la licence CeCILL V2.1. Le texte complet
+// de la licence CeCILL V2.1 est dans le fichier `LICENSE`.
+
+// *********************************
+// **** Equation d'exports     *****
+// ****       P6dim7CH         *****
+// *********************************
+DELACCESS all; DELSAVE all; DRANGE;
+ACCESS outils id ./outils;        					SEARCH outils;
+ACCESS cad type formdata id ./don3ch.frm mode r ; SEARCH cad ;
+
+
+USEMOD ;    // Le modèle
+ADDSYM endogenous td_p6_dim7_ch , exogenous p6_dim7_ch_cale , 'c ;
+ADDEQ bottom,
+
+td_p6_dim7_ch	: DEL(LOG(td_p6_dim7_ch)) = p6dim7cst'c
+					+ p6dim7dm0'c			* DEL(LOG(DEMMON))
+					+ p6dim7emergents0'c	* DEL(LOG(PART_EMERGENTS_cpb))
+					+ p6dim7mu'c	 *	(
+								LOG(td_p6_dim7_ch(-1)) - p6_dim7_ch_cale(-1)
+								- LOG(DEMMON(-1))
+								-	(	6.413988
+										+ 0.439334 * LOG(COMPET_cout(-1))
+										- 0.660085 * LOG(PART_EMERGENTS_cpb(-1))	)
+									)
+                    + DEL(p6_dim7_ch_cale);        
+
+
+
+FILEMOD estimeq ;    
+DOSAVE p6_dim7_ch_cale = 0 * td_p6_d7_ch ;    
+USEMOD estimeq; BOUNDS 1995q1 TO 2012q4 ; OLSMOD 1 ; 
+SAVECOEF coefinv; SEARCH save_coefinv;
+
+&simcalenulle 	1987q1 2016q4 estimeq p6_dim7_ch_cale td_p6_dim7_ch o o ;
+&calculcale		1987q1 2016q4 estimeq p6_dim7_ch_cale td_p6_dim7_ch o ;
+
+
+// *************************** CALCUL DES CONTRIBUTIONS ***************************//
+
+// *** en trimestriel ***
+DOSAVE	mainf_p6dim7_demmon			= mainf'f(C.(1 + p6dim7mu),C.(p6dim7dm0, -p6dim7dm0 + p6dim7mu * (-1))),
+		mainf_p6dim7_compet			= mainf'f(C.(1 + p6dim7mu),C.(0, p6dim7mu * (-0.439334))),
+		mainf_p6dim7_emergents		= mainf'f(C.(1 + p6dim7mu),C.(p6dim7emergents0, p6dim7mu * (+0.660085) - p6dim7emergents0));
+		
+DOSAVE	contrib_p6dim7_demmon     	= contrib'f( DEL( LOG(DEMMON))				,mainf_p6dim7_demmon		),
+		contrib_p6dim7_compet		= contrib'f( DEL( LOG(COMPET_cout))			,mainf_p6dim7_compet		),
+		contrib_p6dim7_emergents	= contrib'f( DEL(LOG(PART_EMERGENTS_cpb))	,mainf_p6dim7_emergents		),
+		contrib_p6dim7_cale			= DEL(p6_dim7_ch_cale),
+		dlog_simul					= DEL(LOG(simul)),
+		dlog_obs					= DEL(LOG(obs));
+
+/* Vérifications */
+DOSAVE  contrib_verif_simul 	= dlog_simul - contrib_p6dim7_demmon - contrib_p6dim7_compet - contrib_p6dim7_emergents,
+ 		contrib_verif_obs		= dlog_obs-dlog_simul-contrib_p6dim7_cale;
+DO	PRT.(contrib_verif_simul),
+	PRT.(contrib_verif_obs);
+
+
+
+// *** en annuel ***
+DOSAVE	contrib_p6dim7_demmon_ann 		= 100*calcul'f(contrib_p6dim7_demmon   	),
+		contrib_p6dim7_compet_ann 		= 100*calcul'f(contrib_p6dim7_compet	),
+		contrib_p6dim7_emergents_ann 	= 100*calcul'f(contrib_p6dim7_emergents	),
+		contrib_p6dim7_cale_ann 		= 100*calcul'f(contrib_p6dim7_cale		),
+      	dlog_simul_ann 					= 100*calcul'f(dlog_simul),          
+     	dlog_obs_ann 					= 100*calcul'f(dlog_obs);
+     	
+/* Vérifications */
+DOSAVE contrib_verif_simul_ann	= dlog_simul_ann - contrib_p6dim7_demmon_ann - contrib_p6dim7_compet_ann - contrib_p6dim7_emergents_ann ,
+       contrib_verif_obs_ann	= dlog_obs_ann - dlog_simul_ann - contrib_p6dim7_cale_ann;  
+DO	PRT.(contrib_verif_simul_ann),
+	PRT.(contrib_verif_obs_ann);
+
+
+
+//********************************************************************************************************   
+// Sorties : contributions annuelles et trimestrielles, séries simulées et observées
+//******************************************************************************************************** 
+
+DRANGE 1992a TO 2016a;
+&ts2tbl file "contrib/p6dim7ctribann.csv"	vari dlog_obs_ann dlog_simul_ann contrib_p6dim7_demmon_ann  contrib_p6dim7_compet_ann  contrib_p6dim7_emergents_ann  contrib_p6dim7_cale_ann ;
+
+                               
+DRANGE 1992q1 TO 2016q4;
+&ts2tbl file "contrib/p6dim7ctribtrim.csv"	vari dlog_obs dlog_simul contrib_p6dim7_demmon contrib_p6dim7_compet contrib_p6dim7_emergents contrib_p6dim7_cale;
+                               
+DRANGE;
